@@ -17,6 +17,7 @@ fn main() {
 
     let contents = include_str!("../EXAMPLE.ir").to_string();
 
+    let contents = contents.replace('\r', "\n");
     let lines = contents.split("\n");
 
     for line in lines {

@@ -1,4 +1,4 @@
-use crate::{Compiler, Register, Size, Value};
+use crate::{Compiler, Instruction, Register, Size, Value, ValueCodegen};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OperandType {
@@ -26,56 +26,53 @@ impl Operand {
         rhs: &Option<Value>,
         _ty: &OperandType,
         compiler: &mut Compiler,
-    ) -> String {
+    ) {
+        let lhs = lhs.codegen(compiler);
         match self {
             Operand::Move => {
                 let rhs = rhs.as_ref().unwrap().codegen(compiler);
-                let lhs = lhs.codegen(compiler);
 
                 if lhs.is_stack() && rhs.is_stack()
                 {
-                    return format!("mov {}, {}\nmov {}, {0}", Register::AX.as_size(&Size::DoubleWord), rhs.inner(), lhs.inner());
+                    compiler.new_instruction(Instruction::Move(ValueCodegen::Register(Register::AX.as_dword()), rhs));
+                    compiler.new_instruction(Instruction::Move(lhs, ValueCodegen::Register(Register::AX.as_dword())));
+                    return;
                 }
 
-                return format!("mov {}, {}", lhs.inner(), rhs.inner());
+                compiler.new_instruction(Instruction::Move(lhs, rhs))
             }
-            Operand::Label => return format!("{}:\npush rbp", lhs.codegen(compiler).inner()),
+            Operand::Label => {
+                compiler.new_instruction(Instruction::Label(lhs));
+                compiler.new_instruction(Instruction::Push(ValueCodegen::Register(Register::BP.as_qword())));
+            },
             Operand::Multiply | Operand::IntMultiply => {
                 let rhs = rhs.as_ref().unwrap();
                 match _ty {
                     OperandType::Undefined => todo!(),
                     OperandType::Int(size) => {
-                        let lhs = lhs.codegen(compiler);
-                        let rhs = rhs.codegen(compiler);
+                        let lhs = lhs;
+                        let rhs = rhs.codegen(compiler);    
 
                         if lhs.is_stack() && rhs.is_stack()
                         {
-                            return format!(
-                                "mov eax, {}\n{} eax, {}\nmov {1}, eax",
-                                lhs.inner(),
-                                match self {Self::IntMultiply => "imul", _ => "mul"},
-                                rhs.inner(),
-                            );
+                            compiler.new_instruction(Instruction::Move(ValueCodegen::Register(Register::AX.as_dword()), lhs.clone()));
+                            compiler.new_instruction(match self {Self::IntMultiply => Instruction::IntMultiply(ValueCodegen::Register(Register::AX.as_dword()), rhs), _ => Instruction::Multiply(ValueCodegen::Register(Register::AX.as_dword()), rhs)});
+                            compiler.new_instruction(Instruction::Move(lhs, ValueCodegen::Register(Register::AX.as_dword())));
+                            return;
                         }
 
-                        return format!(
-                            "{} {}, {}",
-                            match self {Self::IntMultiply => "imul", _ => "mul"},
-                            lhs.inner(),
-                            rhs.inner(),
-                        );
+                        compiler.new_instruction(match self {Self::IntMultiply => Instruction::IntMultiply(lhs, rhs), _ => Instruction::Multiply(lhs, rhs)});
                     }
                 }
             }
             Operand::Return => {
-                if *_ty == OperandType::Undefined
+                if let OperandType::Int(size) = _ty.clone()
                 {
-                    format!("pop rbp\nret")
-                } else
-                {
-                    let size = if let OperandType::Int(size) = _ty {size} else {panic!()};
-                    format!("mov {}, {}\npop rbp\nret", Register::AX.as_size(size), lhs.codegen(compiler).inner())
+                    compiler.new_instruction(Instruction::Move(ValueCodegen::Register(Register::AX.as_size(&size)), lhs));
                 }
+
+                compiler.new_instruction(Instruction::Pop(ValueCodegen::Register(Register::BP.as_qword())));
+                compiler.new_instruction(Instruction::Return);
             }
             Operand::Add => todo!(),
             Operand::Subtract => todo!(),

@@ -1,10 +1,11 @@
 use std::collections::HashMap;
-use crate::{RegisterAllocator, Size, ValueCodegen};
+use crate::{Instruction, RegisterAllocator, Size, ValueCodegen};
 
 pub struct Compiler {
     pub variables: HashMap<String, (u32, Size)>,
     pub registers: RegisterAllocator,
     pub current_offset: Vec<u32>,
+    pub compiled : Vec<Instruction>,
 }
 
 impl Compiler {
@@ -14,7 +15,13 @@ impl Compiler {
             variables: HashMap::new(),
             current_offset: vec![],
             registers: RegisterAllocator::new(),
+            compiled : vec![]
         }
+    }
+    
+    pub fn new_instruction(&mut self, instr : Instruction)
+    {
+        self.compiled.push(instr)
     }
 
     pub fn new_stack_frame(&mut self) {

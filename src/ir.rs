@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::{Compiler, Operand, OperandType, Size};
 
 #[derive(Debug, Clone)]
@@ -9,34 +11,42 @@ pub enum Value {
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
-pub enum ValueCodegen
-{
+pub enum ValueCodegen {
     Register(String),
     StackOffset(String),
     Number(String),
-    StringLiteral(String)
+    StringLiteral(String),
 }
 
-impl ValueCodegen
-{
-    pub fn is_register(&self) -> bool
-    {
-        if let ValueCodegen::Register(_) = self {true} else {false}
+impl Display for ValueCodegen {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.inner())
+    }
+}
+
+impl ValueCodegen {
+    pub fn is_register(&self) -> bool {
+        if let ValueCodegen::Register(_) = self {
+            true
+        } else {
+            false
+        }
     }
 
-    pub fn is_stack(&self) -> bool
-    {
-        if let ValueCodegen::StackOffset(_) = self {true} else {false}
+    pub fn is_stack(&self) -> bool {
+        if let ValueCodegen::StackOffset(_) = self {
+            true
+        } else {
+            false
+        }
     }
 
-    pub fn inner(&self) -> String
-    {
-        match self
-        {
-            ValueCodegen::Register(s) |
-            ValueCodegen::StackOffset(s) |
-            ValueCodegen::Number(s) |
-            ValueCodegen::StringLiteral(s) => s.clone(),
+    pub fn inner(&self) -> String {
+        match self {
+            ValueCodegen::Register(s)
+            | ValueCodegen::StackOffset(s)
+            | ValueCodegen::Number(s)
+            | ValueCodegen::StringLiteral(s) => s.clone(),
         }
     }
 }
@@ -47,7 +57,7 @@ impl Value {
             Value::Variable(size, ref name) => compiler.get_or_allocate_variable(name, size),
             Value::Int(num) => ValueCodegen::Number(num.clone()),
             Value::StringLiteral(literal) => ValueCodegen::StringLiteral(literal.clone()),
-            _ => panic!()
+            _ => panic!(),
         }
     }
 
@@ -68,9 +78,9 @@ pub struct IRStatement {
 }
 
 impl IRStatement {
-    pub fn codegen(&self, compiler: &mut Compiler) -> String {
+    pub fn codegen(&self, compiler: &mut Compiler) {
         self.operand
-            .codegen(&self.lhs, &self.rhs, &self.op_type, compiler)
+            .codegen(&self.lhs, &self.rhs, &self.op_type, compiler);
     }
 }
 
@@ -80,20 +90,22 @@ pub struct IRModule {
 }
 
 impl IRModule {
-    pub fn new() -> Self
-    {
-        Self
-        {
-            statements : vec![]
-        }
+    pub fn new() -> Self {
+        Self { statements: vec![] }
     }
-    
+
     pub fn compile(&self) -> String {
         let mut compiler = Compiler::new();
 
         let mut buffer = String::new();
         for statement in &self.statements {
-            buffer.push_str(format!("{}\n", statement.codegen(&mut compiler)).as_str());
+            statement.codegen(&mut compiler);
+        }
+
+        for asm in &compiler.compiled
+        {
+            buffer.push_str(&asm.codegen_x86());
+            buffer.push('\n')
         }
 
         buffer
