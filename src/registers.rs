@@ -137,7 +137,7 @@ impl Register {
             Register::R13 => "R13".to_string(),
             Register::R14 => "R14".to_string(),
             Register::R15 => "R15".to_string(),
-            _ => format!("E{}", self.as_word()),
+            _ => format!("R{}", self.as_word()),
         }
     }
 
