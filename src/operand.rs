@@ -4,6 +4,20 @@ use crate::{Compiler, Instruction, Register, Size, Value, ValueCodegen};
 pub enum OperandType {
     Undefined,
     Int(Size),
+    UInt(Size)
+}
+
+impl OperandType
+{
+    pub fn size(&self) -> Size
+    {
+        match self
+        {
+            OperandType::Undefined => Size::Byte,
+            OperandType::Int(size) |
+            OperandType::UInt(size) => *size,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -28,14 +42,16 @@ impl Operand {
         compiler: &mut Compiler,
     ) {
         let lhs = lhs.codegen(compiler);
+        let size = _ty.size();
+
         match self {
             Operand::Move => {
                 let rhs = rhs.as_ref().unwrap().codegen(compiler);
 
                 if lhs.is_stack() && rhs.is_stack()
                 {
-                    compiler.new_instruction(Instruction::Move(ValueCodegen::Register(Register::AX.as_dword()), rhs));
-                    compiler.new_instruction(Instruction::Move(lhs, ValueCodegen::Register(Register::AX.as_dword())));
+                    compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&size), rhs));
+                    compiler.new_instruction(Instruction::Move(lhs, Register::AX.as_gen(&size)));
                     return;
                 }
 
@@ -43,21 +59,21 @@ impl Operand {
             }
             Operand::Label => {
                 compiler.new_instruction(Instruction::Label(lhs));
-                compiler.new_instruction(Instruction::Push(ValueCodegen::Register(Register::BP.as_qword())));
+                compiler.new_instruction(Instruction::Push(Register::BP.as_gen(&Size::QuadWord)));
             },
             Operand::Multiply | Operand::IntMultiply => {
                 let rhs = rhs.as_ref().unwrap();
                 match _ty {
                     OperandType::Undefined => todo!(),
-                    OperandType::Int(size) => {
+                    OperandType::Int(size) | OperandType::UInt(size) => {
                         let lhs = lhs;
                         let rhs = rhs.codegen(compiler);    
 
                         if lhs.is_stack() && rhs.is_stack()
                         {
-                            compiler.new_instruction(Instruction::Move(ValueCodegen::Register(Register::AX.as_dword()), lhs.clone()));
-                            compiler.new_instruction(match self {Self::IntMultiply => Instruction::IntMultiply(ValueCodegen::Register(Register::AX.as_dword()), rhs), _ => Instruction::Multiply(ValueCodegen::Register(Register::AX.as_dword()), rhs)});
-                            compiler.new_instruction(Instruction::Move(lhs, ValueCodegen::Register(Register::AX.as_dword())));
+                            compiler.new_instruction(Instruction::Move(Register::AX.as_gen(size), lhs.clone()));
+                            compiler.new_instruction(match self {Self::IntMultiply => Instruction::IntMultiply(Register::AX.as_gen(size), rhs), _ => Instruction::Multiply(Register::AX.as_gen(size), rhs)});
+                            compiler.new_instruction(Instruction::Move(lhs, Register::AX.as_gen(size)));
                             return;
                         }
 
@@ -71,7 +87,7 @@ impl Operand {
                     compiler.new_instruction(Instruction::Move(ValueCodegen::Register(Register::AX.as_size(&size)), lhs));
                 }
 
-                compiler.new_instruction(Instruction::Pop(ValueCodegen::Register(Register::BP.as_qword())));
+                compiler.new_instruction(Instruction::Pop(Register::BP.as_gen(&Size::QuadWord)));
                 compiler.new_instruction(Instruction::Return);
             }
             Operand::Add => todo!(),

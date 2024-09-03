@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::Size;
+use crate::{Size, ValueCodegen};
 
 pub struct RegisterAllocator {
     registers: HashMap<Register, Option<String>>,
@@ -92,6 +92,11 @@ pub enum Register {
 impl Register {
     pub fn as_index(&self) -> usize {
         unsafe { std::mem::transmute(self) }
+    }
+
+    pub fn as_gen(&self, size : &Size) -> ValueCodegen
+    {
+        ValueCodegen::Register(self.as_size(size))
     }
 
     pub fn as_word(&self) -> String {
