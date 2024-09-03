@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "IR"
+name = "low-level-ir"
 version = "0.1.0"
