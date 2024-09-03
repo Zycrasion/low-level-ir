@@ -4,7 +4,7 @@ use crate::{Size, ValueCodegen};
 
 pub struct RegisterAllocator {
     registers: HashMap<Register, Option<String>>,
-    variables: HashMap<String, Register>,
+    variables: HashMap<String, (Register, Size)>,
 }
 
 impl RegisterAllocator {
@@ -32,7 +32,7 @@ impl RegisterAllocator {
         }
     }
 
-    pub fn allocate(&mut self, var: &String) -> Result<(), ()> {
+    pub fn allocate(&mut self, var: &String, size : &Size) -> Result<(), ()> {
         if self.variables.contains_key(var) {
             return Ok(());
         }
@@ -41,7 +41,7 @@ impl RegisterAllocator {
         for key in keys {
             if self.registers[&key].is_none() {
                 self.registers.insert(key, Some(var.clone()));
-                self.variables.insert(var.clone(), key);
+                self.variables.insert(var.clone(), (key, *size));
                 return Ok(());
             }
         }
@@ -49,7 +49,7 @@ impl RegisterAllocator {
         Err(())
     }
 
-    pub fn get(&self, var: &String) -> Option<Register> {
+    pub fn get(&self, var: &String) -> Option<(Register, Size)> {
         if !self.variables.contains_key(var) {
             return None;
         }
@@ -57,8 +57,8 @@ impl RegisterAllocator {
         Some(self.variables[var])
     }
 
-    pub fn get_or_allocate(&mut self, var: &String) -> Option<Register> {
-        let _ = self.allocate(var);
+    pub fn get_or_allocate(&mut self, var: &String, size : &Size) -> Option<(Register, Size)> {
+        let _ = self.allocate(var, size);
         let get = self.get(var);
 
         if get.is_some() {

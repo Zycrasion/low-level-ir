@@ -37,9 +37,9 @@ impl Compiler {
     }
 
     pub fn allocate_variable(&mut self, name: &String, size: &Size) -> ValueCodegen {
-        if self.registers.allocate(name).is_ok()
+        if self.registers.allocate(name, size).is_ok()
         {
-            return ValueCodegen::Register(self.registers.get(name).unwrap().as_size(size))
+            return ValueCodegen::Register(self.registers.get(name).unwrap().0.as_size(size))
         }
 
         let off = *self.offset();
@@ -51,10 +51,26 @@ impl Compiler {
         ValueCodegen::StackOffset(format!("{} [rbp-{}]", size.name(), offset))
     }
 
-    pub fn get_or_allocate_variable(&mut self, name: &String, size: &Size) -> ValueCodegen {
-        if let Some(reg) = self.registers.get_or_allocate(name)
+    pub fn get_variable(&mut self, name : &String) -> Option<ValueCodegen>
+    {
+        if let Some((reg, size)) = self.registers.get(name)
         {
-            return ValueCodegen::Register(reg.as_size(size));
+            Some(reg.as_gen(&size))
+        } else
+        {    
+            if let Some((offset, size)) = self.variables.get(name) {
+                Some(ValueCodegen::StackOffset(format!("{} [rbp-{}]", size.name(), offset)))
+            } else
+            {
+                None
+            }
+        }
+    }
+
+    pub fn get_or_allocate_variable(&mut self, name: &String, size: &Size) -> ValueCodegen {
+        if let Some(reg) = self.registers.get_or_allocate(name, size)
+        {
+            return ValueCodegen::Register(reg.0.as_size(size));
         }
 
         if let Some((offset, other_size)) = self.variables.get(name) {

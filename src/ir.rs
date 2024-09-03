@@ -5,6 +5,7 @@ use crate::{Compiler, Operand, OperandType, Size};
 #[derive(Debug, Clone)]
 pub enum Value {
     Variable(Size, String),
+    VariableReference(String),
     Int(String), // Store numerals as strings because we are directly compiling into AMD64
     StringLiteral(String),
     Null,
@@ -57,7 +58,9 @@ impl Value {
             Value::Variable(size, ref name) => compiler.get_or_allocate_variable(name, size),
             Value::Int(num) => ValueCodegen::Number(num.clone()),
             Value::StringLiteral(literal) => ValueCodegen::StringLiteral(literal.clone()),
-            _ => panic!(),
+            Value::VariableReference(name) => compiler.get_variable(name).unwrap(),
+            Value::Null => panic!(),
+            
         }
     }
 
