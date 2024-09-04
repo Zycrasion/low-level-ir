@@ -32,6 +32,18 @@ impl RegisterAllocator {
         }
     }
 
+    pub fn deallocate(&mut self, var: &String) -> bool
+    {
+        if !self.variables.contains_key(var)
+        {
+            return false;
+        }
+
+        *self.registers.get_mut(&self.variables[var].0).unwrap() = None;
+        self.variables.remove(var);
+        true
+    }
+
     pub fn allocate(&mut self, var: &String, size : &Size) -> Result<(), ()> {
         if self.variables.contains_key(var) {
             return Ok(());

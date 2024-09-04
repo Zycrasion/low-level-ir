@@ -1,4 +1,4 @@
-use crate::{Compiler, Instruction, Register, Size, Value, ValueCodegen};
+use crate::{Compiler, IRStatement, Instruction, Register, Size, Value, ValueCodegen};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OperandType {
@@ -23,6 +23,7 @@ impl OperandType
 #[derive(Debug, Clone, Copy)]
 pub enum Operand {
     Move,
+    DropVariable,
     Label,
     Multiply,
     IntMultiply,
@@ -34,6 +35,17 @@ pub enum Operand {
 }
 
 impl Operand {
+    pub fn ir(&self, ty : OperandType, lhs : Value, rhs : Option<Value>) -> IRStatement
+    {
+        IRStatement
+        {
+            op_type : ty,
+            operand : *self,
+            lhs,
+            rhs
+        }
+    }
+
     pub fn codegen(
         &self,
         lhs: &Value,
@@ -41,6 +53,7 @@ impl Operand {
         _ty: &OperandType,
         compiler: &mut Compiler,
     ) {
+        let lhs_original = lhs.clone();
         let lhs = lhs.codegen(compiler);
         let size = _ty.size();
 
@@ -60,6 +73,7 @@ impl Operand {
             Operand::Label => {
                 compiler.new_instruction(Instruction::Label(lhs));
                 compiler.new_instruction(Instruction::Push(Register::BP.as_gen(&Size::QuadWord)));
+                compiler.new_stack_frame();
             },
             Operand::Multiply | Operand::IntMultiply => {
                 let rhs = rhs.as_ref().unwrap();
@@ -89,6 +103,17 @@ impl Operand {
 
                 compiler.new_instruction(Instruction::Pop(Register::BP.as_gen(&Size::QuadWord)));
                 compiler.new_instruction(Instruction::Return);
+            }
+            Operand::DropVariable =>
+            {
+                // This variable is no longer used anywhere
+                if let Value::VariableReference(name) = lhs_original
+                {
+                    compiler.dealloc_variable(&name)
+                } else
+                {
+                    panic!()
+                }
             }
             Operand::Add => todo!(),
             Operand::Subtract => todo!(),

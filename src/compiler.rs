@@ -36,6 +36,14 @@ impl Compiler {
         self.current_offset.last_mut().unwrap()
     }
 
+    pub fn dealloc_variable(&mut self, name : &String)
+    {
+        if !self.registers.deallocate(name)
+        {
+            let offset = self.variables.remove(name).unwrap();
+        }
+    }
+
     pub fn allocate_variable(&mut self, name: &String, size: &Size) -> ValueCodegen {
         if self.registers.allocate(name, size).is_ok()
         {
