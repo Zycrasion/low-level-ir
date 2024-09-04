@@ -7,21 +7,24 @@ pub struct RegisterAllocator {
     variables: HashMap<String, (Register, Size)>,
 }
 
+const SCRATCH_REGISTERS : &[Register] = &[
+    Register::SI, // System V-Abi scratch registers
+    Register::DX,
+    Register::CX,
+    Register::R8,
+    Register::R9,
+    Register::R10,
+    Register::R11,
+];
+
+
 impl RegisterAllocator {
     pub fn new() -> Self {
-        let registers = vec![
-            Register::SI, // System V-Abi scratch registers
-            Register::DX,
-            Register::CX,
-            Register::R8,
-            Register::R9,
-            Register::R10,
-            Register::R11,
-        ];
+
 
         let mut map = HashMap::new();
 
-        for register in &registers {
+        for register in SCRATCH_REGISTERS.iter() {
             map.insert(*register, None);
         }
 
@@ -48,11 +51,10 @@ impl RegisterAllocator {
             return Ok(());
         }
 
-        let keys = self.registers.keys().cloned();
-        for key in keys {
-            if self.registers[&key].is_none() {
-                self.registers.insert(key, Some(var.clone()));
-                self.variables.insert(var.clone(), (key, *size));
+        for reg in SCRATCH_REGISTERS.iter() {
+            if self.registers[reg].is_none() {
+                self.registers.insert(*reg, Some(var.clone()));
+                self.variables.insert(var.clone(), (*reg, *size));
                 return Ok(());
             }
         }
