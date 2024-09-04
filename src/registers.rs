@@ -10,14 +10,13 @@ pub struct RegisterAllocator {
 impl RegisterAllocator {
     pub fn new() -> Self {
         let registers = vec![
+            Register::SI, // System V-Abi scratch registers
+            Register::DX,
+            Register::CX,
             Register::R8,
             Register::R9,
             Register::R10,
             Register::R11,
-            Register::R12,
-            Register::R13,
-            Register::R14,
-            Register::R15,
         ];
 
         let mut map = HashMap::new();
