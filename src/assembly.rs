@@ -8,7 +8,9 @@ pub enum Instruction
     Multiply(ValueCodegen, ValueCodegen),
     Return,
     Push(ValueCodegen),
-    Pop(ValueCodegen)
+    Pop(ValueCodegen),
+    Add(ValueCodegen, ValueCodegen),
+    Sub(ValueCodegen, ValueCodegen),
 }
 
 impl Instruction
@@ -24,6 +26,9 @@ impl Instruction
             Instruction::Return                 => format!("ret"),
             Instruction::Push(src)              => format!("push {src}"),
             Instruction::Pop(dst)               => format!("pop {dst}"),
+            Instruction::Add(dst, src)          => format!("add {dst}, {src}"),
+            Instruction::Sub(dst, src)          => format!("sub {dst}, {src}"),
+            
         }
     }
 }

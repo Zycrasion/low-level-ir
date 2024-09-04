@@ -115,8 +115,14 @@ impl Operand {
                     panic!()
                 }
             }
-            Operand::Add => todo!(),
-            Operand::Subtract => todo!(),
+            Operand::Add => {
+                let rhs = rhs.clone().unwrap().codegen(compiler);
+                compiler.new_instruction(Instruction::Add(lhs, rhs))
+            }
+            Operand::Subtract => {
+                let rhs = rhs.clone().unwrap().codegen(compiler);
+                compiler.new_instruction(Instruction::Sub(lhs, rhs))
+            },
             Operand::Divide => todo!(),
             Operand::IntDivide => todo!(),
         }
