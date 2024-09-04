@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Display};
 
-use crate::{Compiler, Operand, OperandType, Size};
+use crate::{deallocation_pass, Compiler, Operand, OperandType, Size};
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -97,51 +97,9 @@ impl IRModule {
         Self { statements: vec![] }
     }
 
-    pub fn variable_pass(&mut self)
+    pub fn optimise(&mut self)
     {
-        let mut statements = Vec::with_capacity(self.statements.capacity());
-        let mut variable_last_usage = HashMap::new();
-
-        let mut i = 0usize;
-        for statement in &self.statements
-        {
-            if let Value::VariableReference(name) = statement.lhs.clone()
-            {
-                variable_last_usage.insert(name, i);
-            }
-            if let Value::Variable(_, name) = statement.lhs.clone()
-            {
-                variable_last_usage.insert(name, i);
-            }
-            if let Some(rhs) = statement.rhs.clone()
-            {
-                if let Value::VariableReference(name) = rhs
-                {
-                    variable_last_usage.insert(name, i);
-                }
-            }
-           
-            i += 1;
-        }
-
-        let values = variable_last_usage.iter().map(|(k, v)| (k.clone(), *v)).collect::<Vec<(String, usize)>>();
-
-        i = 0;
-        for statement in &self.statements
-        {
-            statements.push(statement.clone());
-            for value in &values
-            {
-                if value.1 == i
-                {
-                    statements.push(Operand::DropVariable.ir(OperandType::Undefined, Value::VariableReference(value.0.clone()), None))
-                }
-            }
-
-            i += 1;
-        }
-
-        self.statements = statements;
+        deallocation_pass(self);
     }
 
     pub fn compile(&self) -> String {
