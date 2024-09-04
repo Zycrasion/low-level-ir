@@ -41,6 +41,8 @@ pub fn deallocation_pass(ir_module : &mut IRModule)
         {
             if value.1 == i
             {
+                // If the variable was last used on the line it was assigned,
+                // Remove the statement that assigns it and dont append the drop.
                 if let Value::Variable(_, name) = statement.lhs.clone()
                 {   
                     if name == value.0
