@@ -11,19 +11,15 @@ pub fn deallocation_pass(ir_module : &mut IRModule)
     let mut i = 0usize;
     for statement in &ir_module.statements
     {
-        if let Value::VariableReference(name) = statement.lhs.clone()
+        let values = statement.operand.get_values();
+
+        for v in values
         {
-            variable_last_usage.insert(name, i);
-        }
-        if let Value::Variable(_, name) = statement.lhs.clone()
-        {
-            variable_last_usage.insert(name, i);
-        }
-        if let Some(rhs) = statement.rhs.clone()
-        {
-            if let Value::VariableReference(name) = rhs
+            match v
             {
-                variable_last_usage.insert(name, i);
+                Value::Variable(_, name) | Value::VariableReference(name) => {variable_last_usage.insert(name.clone(), i);},
+                // Value::VariableReference(name) => variable_last_usage.insert(name, i),
+                _ => {}
             }
         }
        
@@ -43,15 +39,18 @@ pub fn deallocation_pass(ir_module : &mut IRModule)
             {
                 // If the variable was last used on the line it was assigned,
                 // Remove the statement that assigns it and dont append the drop.
-                if let Value::Variable(_, name) = statement.lhs.clone()
+                if let Operand::Move(lhs, _) = statement.operand.clone()
                 {   
-                    if name == value.0
+                    if let Value::Variable(_, name) = lhs
                     {
-                        statements.pop();
+                        if name == value.0
+                        {
+                            statements.pop();
+                            continue 'value_loop;
+                        }
                     }
-                    continue 'value_loop;
                 }
-                statements.push(Operand::DropVariable.ir(OperandType::Undefined, Value::VariableReference(value.0.clone()), None))
+                statements.push(Operand::DropVariable(value.0.clone()).ir(OperandType::Undefined))
             }
         }
 

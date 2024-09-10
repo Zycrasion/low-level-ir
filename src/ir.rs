@@ -76,14 +76,12 @@ impl Value {
 pub struct IRStatement {
     pub op_type: OperandType,
     pub operand: Operand,
-    pub lhs: Value,
-    pub rhs: Option<Value>,
 }
 
 impl IRStatement {
     pub fn codegen(&self, compiler: &mut Compiler) {
         self.operand
-            .codegen(&self.lhs, &self.rhs, &self.op_type, compiler);
+            .codegen(&self.op_type, compiler);
     }
 }
 
