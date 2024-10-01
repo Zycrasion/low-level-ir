@@ -24,14 +24,15 @@ impl OperandType
 pub enum Operand {
     Move,
     DropVariable,
-    Label,
+    FunctionDecl,
     Multiply,
     IntMultiply,
     Add,
     Subtract,
     Divide,
     IntDivide,
-    Return
+    Return,
+    InlineAssembly
 }
 
 impl Operand {
@@ -58,6 +59,10 @@ impl Operand {
         let size = _ty.size();
 
         match self {
+            Operand::InlineAssembly =>
+            {
+                compiler.new_instruction(Instruction::AsmLiteral(lhs.inner()));
+            }
             Operand::Move => {
                 let rhs = rhs.as_ref().unwrap().codegen(compiler);
 
@@ -70,7 +75,7 @@ impl Operand {
 
                 compiler.new_instruction(Instruction::Move(lhs, rhs))
             }
-            Operand::Label => {
+            Operand::FunctionDecl => {
                 compiler.new_instruction(Instruction::Label(lhs));
                 compiler.new_instruction(Instruction::Push(Register::BP.as_gen(&Size::QuadWord)));
                 compiler.new_stack_frame();
@@ -103,6 +108,7 @@ impl Operand {
 
                 compiler.new_instruction(Instruction::Pop(Register::BP.as_gen(&Size::QuadWord)));
                 compiler.new_instruction(Instruction::Return);
+                compiler.pop_stack_frame()
             }
             Operand::DropVariable =>
             {

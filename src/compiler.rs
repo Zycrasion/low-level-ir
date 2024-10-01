@@ -28,6 +28,10 @@ impl Compiler {
         self.current_offset.push(0)
     }
 
+    pub fn pop_stack_frame(&mut self) {
+        self.current_offset.pop();
+    }
+
     pub fn offset(&mut self) -> &mut u32 {
         if self.current_offset.len() == 0 {
             self.current_offset.push(0);

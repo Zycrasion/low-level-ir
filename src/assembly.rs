@@ -2,6 +2,7 @@ use crate::ValueCodegen;
 
 pub enum Instruction
 {
+    AsmLiteral(String),
     Label(ValueCodegen),
     Move(ValueCodegen, ValueCodegen),
     IntMultiply(ValueCodegen, ValueCodegen),
@@ -28,7 +29,7 @@ impl Instruction
             Instruction::Pop(dst)               => format!("pop {dst}"),
             Instruction::Add(dst, src)          => format!("add {dst}, {src}"),
             Instruction::Sub(dst, src)          => format!("sub {dst}, {src}"),
-            
+            Instruction::AsmLiteral(literal)    => literal.clone()
         }
     }
 }

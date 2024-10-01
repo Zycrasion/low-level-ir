@@ -60,7 +60,6 @@ impl Value {
             Value::StringLiteral(literal) => ValueCodegen::StringLiteral(literal.clone()),
             Value::VariableReference(name) => compiler.get_variable(name).unwrap(),
             Value::Null => panic!(),
-            
         }
     }
 
