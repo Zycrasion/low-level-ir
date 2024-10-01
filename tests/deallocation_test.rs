@@ -5,13 +5,13 @@ fn deallocation_test()
 {
     let mut module = IRModule::new();
     module.statements = vec![
-        Operand::FunctionDecl.ir(OperandType::Undefined, Value::StringLiteral(String::from("_start")), None),
-        Operand::Move.ir(OperandType::Int(Size::DoubleWord), Value::Variable(Size::DoubleWord, "a".to_string()), Some(Value::Int("20".to_string()))),
-        Operand::Move.ir(OperandType::Int(Size::DoubleWord), Value::Variable(Size::DoubleWord, "b".to_string()), Some(Value::VariableReference("a".to_string()))),
-        Operand::Return.ir(OperandType::Int(Size::DoubleWord), Value::VariableReference("b".to_string()), None),
+        Operand::FunctionDecl(String::from("_start")).ir(OperandType::Undefined),
+        Operand::Move(Value::Variable(Size::DoubleWord, "a".to_string()), Value::Int("20".to_string())).ir(OperandType::Int(Size::DoubleWord)),
+        Operand::Move(Value::Variable(Size::DoubleWord, "b".to_string()), Value::VariableReference("a".to_string())).ir(OperandType::Int(Size::DoubleWord)),
+        Operand::Return(Value::VariableReference("b".to_string())).ir(OperandType::Int(Size::DoubleWord)),
     ];
 
-    module.variable_pass();
+    module.optimise();
 
     println!("{}", module.compile());
 }

@@ -44,7 +44,7 @@ impl Compiler {
     {
         if !self.registers.deallocate(name)
         {
-            let offset = self.variables.remove(name).unwrap();
+            let _ = self.variables.remove(name).unwrap();
         }
     }
 

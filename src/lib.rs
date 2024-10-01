@@ -1,3 +1,6 @@
+mod optimisation;
+pub use optimisation::*;
+
 mod registers;
 pub use registers::*;
 

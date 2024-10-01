@@ -3,7 +3,7 @@ use crate::ValueCodegen;
 pub enum Instruction
 {
     AsmLiteral(String),
-    Label(ValueCodegen),
+    Label(String),
     Move(ValueCodegen, ValueCodegen),
     IntMultiply(ValueCodegen, ValueCodegen),
     Multiply(ValueCodegen, ValueCodegen),
