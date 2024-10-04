@@ -29,7 +29,8 @@ pub enum Operand {
     Add(Value, Value),
     Subtract(Value, Value),
     Divide(Value, Value),
-    Return(Value)
+    Return(Value),
+    InlineAssembly(String),
 }
 
 impl Operand {
@@ -39,7 +40,7 @@ impl Operand {
         {
             Self::Move(a, b) | Self::Multiply(a, b) | Self::Add(a, b) | Self::Subtract(a, b) | Self::Divide(a, b) => vec![a.clone(), b.clone()],
             Self::Return(a) => vec![a.clone()],
-            Self::DropVariable(_) | Self::FunctionDecl(_) => vec![]
+            Self::DropVariable(_) | Self::FunctionDecl(_)  | Self::InlineAssembly(_) => vec![]
         }
     }
     
@@ -72,6 +73,10 @@ impl Operand {
                 }
 
                 compiler.new_instruction(Instruction::Move(lhs, rhs))
+            }
+            Operand::InlineAssembly(asm) =>
+            {
+                compiler.new_instruction(Instruction::AsmLiteral(asm.clone()));
             }
             Operand::FunctionDecl(name) => {
                 compiler.new_instruction(Instruction::Label(name.clone()));
