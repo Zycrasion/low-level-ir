@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{deallocation_pass, Compiler, Operand, OperandType, Size};
+use crate::{deallocation_pass, Compiler, Instruction, Operand, OperandType, Register, Size};
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -8,6 +8,7 @@ pub enum Value {
     VariableReference(String),
     Int(String), // Store numerals as strings because we are directly compiling into AMD64
     StringLiteral(String),
+    FunctionCall(String),
     Null,
 }
 
@@ -59,6 +60,10 @@ impl Value {
             Value::Int(num) => ValueCodegen::Number(num.clone()),
             Value::StringLiteral(literal) => ValueCodegen::StringLiteral(literal.clone()),
             Value::VariableReference(name) => compiler.get_variable(name).unwrap(),
+            Value::FunctionCall(name) => {
+                compiler.new_instruction(Instruction::Call(name.clone()));
+                ValueCodegen::Register(Register::AX.as_dword())
+            }
             Value::Null => panic!(),
         }
     }
