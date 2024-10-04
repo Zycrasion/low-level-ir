@@ -25,6 +25,7 @@ pub enum Operand {
     Move(Value, Value),
     DropVariable(String),
     FunctionDecl(String),
+    FunctionCall(String),
     Multiply(Value, Value),
     Add(Value, Value),
     Subtract(Value, Value),
@@ -40,7 +41,7 @@ impl Operand {
         {
             Self::Move(a, b) | Self::Multiply(a, b) | Self::Add(a, b) | Self::Subtract(a, b) | Self::Divide(a, b) => vec![a.clone(), b.clone()],
             Self::Return(a) => vec![a.clone()],
-            Self::DropVariable(_) | Self::FunctionDecl(_)  | Self::InlineAssembly(_) => vec![]
+            Self::DropVariable(_) | Self::FunctionDecl(_)  | Self::InlineAssembly(_) | Self::FunctionCall(_) => vec![]
         }
     }
     
@@ -64,19 +65,22 @@ impl Operand {
             Operand::Move(lhs, rhs) => {
                 let lhs = lhs.codegen(compiler);
                 let rhs = rhs.codegen(compiler);
-
+                
                 if lhs.is_stack() && rhs.is_stack()
                 {
                     compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&size), rhs));
                     compiler.new_instruction(Instruction::Move(lhs, Register::AX.as_gen(&size)));
                     return;
                 }
-
+                
                 compiler.new_instruction(Instruction::Move(lhs, rhs))
             }
             Operand::InlineAssembly(asm) =>
             {
                 compiler.new_instruction(Instruction::AsmLiteral(asm.clone()));
+            }
+            Operand::FunctionCall(name) => {
+                compiler.new_instruction(Instruction::Call(name.clone()));
             }
             Operand::FunctionDecl(name) => {
                 compiler.new_instruction(Instruction::Label(name.clone()));
