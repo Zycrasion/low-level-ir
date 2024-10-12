@@ -1,11 +1,10 @@
-use std::fmt::Display;
+use std::{env::var, fmt::Display};
 
 use crate::{deallocation_pass, Compiler, Instruction, Operand, OperandType, Register, Size};
 
 #[derive(Debug, Clone)]
 pub enum Value {
-    Variable(Size, String),
-    VariableReference(String),
+    Variable(String),
     Int(String), // Store numerals as strings because we are directly compiling into AMD64
     StringLiteral(String),
     FunctionCall(String),
@@ -56,10 +55,12 @@ impl ValueCodegen {
 impl Value {
     pub fn codegen(&self, compiler: &mut Compiler) -> ValueCodegen {
         match self {
-            Value::Variable(size, ref name) => compiler.get_or_allocate_variable(name, size),
+            Value::Variable(ref name) => {
+                let variable = compiler.variables.get(name).expect("Variable {name} does not exist.");
+                variable.0.as_gen(&variable.1.size())
+            },
             Value::Int(num) => ValueCodegen::Number(num.clone()),
             Value::StringLiteral(literal) => ValueCodegen::StringLiteral(literal.clone()),
-            Value::VariableReference(name) => compiler.get_variable(name).unwrap(),
             Value::FunctionCall(name) => {
                 compiler.new_instruction(Instruction::Call(name.clone()));
                 ValueCodegen::Register(Register::AX.as_dword())
@@ -67,36 +68,16 @@ impl Value {
             Value::Null => panic!(),
         }
     }
-
-    pub fn is_variable(&self) -> bool {
-        match self {
-            Value::Variable(_, _) => true,
-            _ => false,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct IRStatement {
-    pub op_type: OperandType,
-    pub operand: Operand,
-}
-
-impl IRStatement {
-    pub fn codegen(&self, compiler: &mut Compiler) {
-        self.operand
-            .codegen(&self.op_type, compiler);
-    }
 }
 
 #[derive(Debug, Clone)]
 pub struct IRModule {
-    pub statements: Vec<IRStatement>,
+    pub operands: Vec<Operand>,
 }
 
 impl IRModule {
     pub fn new() -> Self {
-        Self { statements: vec![] }
+        Self { operands: vec![] }
     }
 
     pub fn optimise(&mut self)
@@ -108,8 +89,8 @@ impl IRModule {
         let mut compiler = Compiler::new();
 
         let mut buffer = String::new();
-        for statement in &self.statements {
-            statement.codegen(&mut compiler);
+        for operands in &self.operands {
+            operands.codegen(&mut compiler);
         }
 
         for asm in &compiler.compiled

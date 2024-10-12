@@ -5,20 +5,19 @@ use crate::*;
 /// Deallocates and also will delete variables that are NEVER used
 pub fn deallocation_pass(ir_module : &mut IRModule)
 {
-    let mut statements = Vec::with_capacity(ir_module.statements.capacity());
+    let mut operands = Vec::with_capacity(ir_module.operands.capacity());
     let mut variable_last_usage = HashMap::new();
 
     let mut i = 0usize;
-    for statement in &ir_module.statements
+    for operand in &ir_module.operands
     {
-        let values = statement.operand.get_values();
+        let values = operand.get_values();
 
         for v in values
         {
             match v
             {
-                Value::Variable(_, name) | Value::VariableReference(name) => {variable_last_usage.insert(name.clone(), i);},
-                // Value::VariableReference(name) => variable_last_usage.insert(name, i),
+                Value::Variable(name)  => {variable_last_usage.insert(name.clone(), i);},
                 _ => {}
             }
         }
@@ -29,9 +28,9 @@ pub fn deallocation_pass(ir_module : &mut IRModule)
     let values = variable_last_usage.iter().map(|(k, v)| (k.clone(), *v)).collect::<Vec<(String, usize)>>();
 
     i = 0;
-    for statement in &ir_module.statements
+    for operand in &ir_module.operands
     {
-        statements.push(statement.clone());
+        operands.push(operand.clone());
         'value_loop:
         for value in &values
         {
@@ -39,23 +38,20 @@ pub fn deallocation_pass(ir_module : &mut IRModule)
             {
                 // If the variable was last used on the line it was assigned,
                 // Remove the statement that assigns it and dont append the drop.
-                if let Operand::Move(lhs, _) = statement.operand.clone()
-                {   
-                    if let Value::Variable(_, name) = lhs
+                if let Operand::DeclareVariable(_, name, _) = operand.clone()
+                { 
+                    if name == value.0
                     {
-                        if name == value.0
-                        {
-                            statements.pop();
-                            continue 'value_loop;
-                        }
+                        operands.pop();
+                        continue 'value_loop;
                     }
                 }
-                statements.push(Operand::DropVariable(value.0.clone()).ir(OperandType::Undefined))
+                operands.push(Operand::DropVariable(value.0.clone()))
             }
         }
 
         i += 1;
     }
 
-    ir_module.statements = statements;
+    ir_module.operands = operands;
 }

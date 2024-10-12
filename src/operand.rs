@@ -1,4 +1,4 @@
-use crate::{Compiler, IRStatement, Instruction, Register, Size, Value, ValueCodegen};
+use crate::{Compiler, Instruction, Register, Size, Value, ValueCodegen};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OperandType {
@@ -22,14 +22,18 @@ impl OperandType
 
 #[derive(Debug, Clone)]
 pub enum Operand {
-    Move(Value, Value),
+    // Type-Explicit
+    DeclareVariable(OperandType, String, Value),
+    FunctionDecl(OperandType, String, Vec<Operand>),
+    Multiply(OperandType, Value, Value),
+    Add(OperandType, Value, Value),
+    Subtract(OperandType, Value, Value),
+    Divide(OperandType, Value, Value),
+
+    // Type-Implicit
+    SetVariable(String, Value),
     DropVariable(String),
-    FunctionDecl(String),
     FunctionCall(String),
-    Multiply(Value, Value),
-    Add(Value, Value),
-    Subtract(Value, Value),
-    Divide(Value, Value),
     Return(Value),
     InlineAssembly(String),
 }
@@ -39,41 +43,38 @@ impl Operand {
     {
         match self
         {
-            Self::Move(a, b) | Self::Multiply(a, b) | Self::Add(a, b) | Self::Subtract(a, b) | Self::Divide(a, b) => vec![a.clone(), b.clone()],
-            Self::Return(a) => vec![a.clone()],
-            Self::DropVariable(_) | Self::FunctionDecl(_)  | Self::InlineAssembly(_) | Self::FunctionCall(_) => vec![]
+            Self::Multiply(_, a, b) | Self::Add(_, a, b) | Self::Subtract(_, a, b) | Self::Divide(_, a, b) => vec![a.clone(), b.clone()],
+            Self::Return(a) | Self::DeclareVariable(_, _, a) | Self::SetVariable(_, a) => vec![a.clone()],
+            Self::DropVariable(_) |  Self::InlineAssembly(_) | Self::FunctionCall(_) => vec![],
+            Self::FunctionDecl(_, _, a) => a.iter().flat_map(|v| v.get_values()).collect()
         }
     }
     
-    pub fn ir(&self, ty : OperandType) -> IRStatement
-    {
-        IRStatement
-        {
-            op_type : ty,
-            operand : self.clone(),
-        }
-    }
-
     pub fn codegen(
         &self,
-        _ty: &OperandType,
         compiler: &mut Compiler,
     ) {
-        let size = _ty.size();
-
         match self {
-            Operand::Move(lhs, rhs) => {
-                let lhs = lhs.codegen(compiler);
-                let rhs = rhs.codegen(compiler);
+            Operand::DeclareVariable(ty, name, value) => {
+                let value = value.codegen(compiler);
+                let variable_location = compiler.variables.allocate(name, &ty).expect("Unable to allocate variable");
+
+                // It's impossible for the VariableManager to allocate on the Stack at the moment
+                // if variable_location.is_stack() && value.is_stack()
+                // {
+                //     // Can't set stack offset to another stack offset
+                //     compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&ty.size()), value));
+                //     compiler.new_instruction(Instruction::Move(variable_location, Register::AX.as_gen(&ty.size())));
+                //     return;
+                // }
                 
-                if lhs.is_stack() && rhs.is_stack()
-                {
-                    compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&size), rhs));
-                    compiler.new_instruction(Instruction::Move(lhs, Register::AX.as_gen(&size)));
-                    return;
-                }
-                
-                compiler.new_instruction(Instruction::Move(lhs, rhs))
+                compiler.new_instruction(Instruction::Move(variable_location.0.as_gen(&ty.size()), value))
+            }
+            Operand::SetVariable(name, value) => {
+                let value = value.codegen(compiler);
+                let variable_location = compiler.variables.get(name).expect("Unable to allocate variable");
+
+                compiler.new_instruction(Instruction::Move(variable_location.0.as_gen(&variable_location.1.size()), value));
             }
             Operand::InlineAssembly(asm) =>
             {
@@ -82,71 +83,74 @@ impl Operand {
             Operand::FunctionCall(name) => {
                 compiler.new_instruction(Instruction::Call(name.clone()));
             }
-            Operand::FunctionDecl(name) => {
+            Operand::FunctionDecl(_type, name, operands) => {
                 compiler.new_instruction(Instruction::Label(name.clone()));
                 compiler.new_instruction(Instruction::Push(Register::BP.as_gen(&Size::QuadWord)));
-                compiler.new_stack_frame();
-            },
-            Operand::Multiply(lhs, rhs) => {
-                let lhs = lhs.codegen(compiler);
+                compiler.functions.declare_function(name, _type).expect("Function {name} is already defined");
 
-                match _ty {
-                    OperandType::Undefined => todo!(),
-                    OperandType::Int(size) | OperandType::UInt(size) => {
-                        let lhs = lhs;
-                        let rhs = rhs.codegen(compiler);    
-
-                        if lhs.is_stack() && rhs.is_stack()
-                        {
-                            compiler.new_instruction(Instruction::Move(Register::AX.as_gen(size), lhs.clone()));
-                            if let OperandType::Int(size) = _ty
-                            {
-                                compiler.new_instruction(Instruction::IntMultiply(Register::AX.as_gen(size), rhs));
-                            } else
-                            {
-                                compiler.new_instruction(Instruction::Multiply(Register::AX.as_gen(size), rhs));
-                            }
-                            compiler.new_instruction(Instruction::Move(lhs, Register::AX.as_gen(size)));
-                            return;
-                        }
-
-                        if let OperandType::Int(size) = _ty
-                        {
-                            compiler.new_instruction(Instruction::IntMultiply(Register::AX.as_gen(size), rhs));
-                        } else
-                        {
-                            compiler.new_instruction(Instruction::Multiply(Register::AX.as_gen(size), rhs));
-                        }
+                for op in operands
+                {
+                    if let Operand::Return(value) = op
+                    {
+                        compiler.new_instruction(Instruction::Pop(Register::BP.as_gen(&_type.size())));
+                        compiler.new_instruction(Instruction::Return);
+                    } else
+                    {
+                        op.codegen(compiler);
                     }
                 }
-            }
+
+            },
             Operand::Return(value) => {
-                if let OperandType::Int(size) = _ty.clone()
-                {
-                    let value = value.codegen(compiler);
-                    compiler.new_instruction(Instruction::Move(ValueCodegen::Register(Register::AX.as_size(&size)), value));
-                }
+                eprintln!("Return not paired with function.");
+                panic!();
 
                 compiler.new_instruction(Instruction::Pop(Register::BP.as_gen(&Size::QuadWord)));
                 compiler.new_instruction(Instruction::Return);
-                compiler.pop_stack_frame()
+            },
+            Operand::Multiply(_ty, lhs, rhs) => {
+                let lhs = lhs.codegen(compiler);
+                let rhs = rhs.codegen(compiler);    
+                let size = &_ty.size();
+
+                if lhs.is_stack() && rhs.is_stack()
+                {
+                    compiler.new_instruction(Instruction::Move(Register::AX.as_gen(size), lhs.clone()));
+                    if let OperandType::Int(size) = _ty
+                    {
+                        compiler.new_instruction(Instruction::IntMultiply(Register::AX.as_gen(size), rhs));
+                    } else
+                    {
+                        compiler.new_instruction(Instruction::Multiply(Register::AX.as_gen(size), rhs));
+                    }
+                    compiler.new_instruction(Instruction::Move(lhs, Register::AX.as_gen(size)));
+                    return;
+                }
+
+                if let OperandType::Int(size) = _ty
+                {
+                    compiler.new_instruction(Instruction::IntMultiply(Register::AX.as_gen(size), rhs));
+                } else
+                {
+                    compiler.new_instruction(Instruction::Multiply(Register::AX.as_gen(size), rhs));
+                }
             }
             Operand::DropVariable(name) =>
             {
                 // This variable is no longer used anywhere
-                compiler.dealloc_variable(name);
+                compiler.variables.deallocate(name);
             }
-            Operand::Add(lhs, rhs) => {
+            Operand::Add(ty, lhs, rhs) => {
                 let lhs = lhs.codegen(compiler);
                 let rhs = rhs.codegen(compiler);
                 compiler.new_instruction(Instruction::Add(lhs, rhs))
             }
-            Operand::Subtract(lhs, rhs) => {
+            Operand::Subtract(ty, lhs, rhs) => {
                 let lhs = lhs.codegen(compiler);
                 let rhs = rhs.codegen(compiler);
                 compiler.new_instruction(Instruction::Sub(lhs, rhs))
             },
-            Operand::Divide(_, _) => todo!(),
+            Operand::Divide(_, _, _) => todo!(),
         }
     }
 }

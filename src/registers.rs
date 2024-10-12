@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use crate::{Size, ValueCodegen};
+use crate::{OperandType, Size, ValueCodegen};
 
-pub struct RegisterAllocator {
+pub struct VariableManager {
     registers: HashMap<Register, Option<String>>,
-    variables: HashMap<String, (Register, Size)>,
+    variables: HashMap<String, (Register, OperandType)>,
 }
 
 const SCRATCH_REGISTERS : &[Register] = &[
@@ -18,7 +18,7 @@ const SCRATCH_REGISTERS : &[Register] = &[
 ];
 
 
-impl RegisterAllocator {
+impl VariableManager {
     pub fn new() -> Self {
 
 
@@ -46,23 +46,19 @@ impl RegisterAllocator {
         true
     }
 
-    pub fn allocate(&mut self, var: &String, size : &Size) -> Result<(), ()> {
-        if self.variables.contains_key(var) {
-            return Ok(());
-        }
-
+    pub fn allocate(&mut self, var: &String, _type : &OperandType) -> Result<(Register, OperandType), ()> {
         for reg in SCRATCH_REGISTERS.iter() {
             if self.registers[reg].is_none() {
                 self.registers.insert(*reg, Some(var.clone()));
-                self.variables.insert(var.clone(), (*reg, *size));
-                return Ok(());
+                self.variables.insert(var.clone(), (*reg, *_type));
+                return Ok((*reg, *_type));
             }
         }
 
         Err(())
     }
 
-    pub fn get(&self, var: &String) -> Option<(Register, Size)> {
+    pub fn get(&self, var: &String) -> Option<(Register, OperandType)> {
         if !self.variables.contains_key(var) {
             return None;
         }
@@ -70,8 +66,8 @@ impl RegisterAllocator {
         Some(self.variables[var])
     }
 
-    pub fn get_or_allocate(&mut self, var: &String, size : &Size) -> Option<(Register, Size)> {
-        let _ = self.allocate(var, size);
+    pub fn get_or_allocate(&mut self, var: &String, _type : &OperandType) -> Option<(Register, OperandType)> {
+        let _ = self.allocate(var, _type);
         let get = self.get(var);
 
         if get.is_some() {

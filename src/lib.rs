@@ -1,3 +1,6 @@
+mod function_manager;
+pub use function_manager::*;
+
 mod optimisation;
 pub use optimisation::*;
 
