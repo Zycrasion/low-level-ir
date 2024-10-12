@@ -92,7 +92,13 @@ impl Operand {
                 {
                     if let Operand::Return(value) = op
                     {
-                        compiler.new_instruction(Instruction::Pop(Register::BP.as_gen(&_type.size())));
+                        if *value != Value::Null
+                        {
+                            let value = value.codegen(compiler);
+                            compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&_type.size()), value));
+                        }
+
+                        compiler.new_instruction(Instruction::Pop(Register::BP.as_gen(&Size::QuadWord)));
                         compiler.new_instruction(Instruction::Return);
                     } else
                     {
@@ -101,12 +107,9 @@ impl Operand {
                 }
 
             },
-            Operand::Return(value) => {
+            Operand::Return(_) => {
                 eprintln!("Return not paired with function.");
                 panic!();
-
-                compiler.new_instruction(Instruction::Pop(Register::BP.as_gen(&Size::QuadWord)));
-                compiler.new_instruction(Instruction::Return);
             },
             Operand::Multiply(_ty, lhs, rhs) => {
                 let lhs = lhs.codegen(compiler);

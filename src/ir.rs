@@ -2,7 +2,7 @@ use std::{env::var, fmt::Display};
 
 use crate::{deallocation_pass, Compiler, Instruction, Operand, OperandType, Register, Size};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Variable(String),
     Int(String), // Store numerals as strings because we are directly compiling into AMD64
