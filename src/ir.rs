@@ -56,7 +56,7 @@ impl Value {
     pub fn codegen(&self, compiler: &mut Compiler) -> ValueCodegen {
         match self {
             Value::Variable(ref name) => {
-                let variable = compiler.variables.get(name).expect("Variable {name} does not exist.");
+                let variable = compiler.scope_manager.get_variable_manager().get(name).expect("Variable {name} does not exist.");
                 variable.0.as_gen(&variable.1.size())
             },
             Value::Int(num) => ValueCodegen::Number(num.clone()),

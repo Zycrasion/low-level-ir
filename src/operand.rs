@@ -1,4 +1,4 @@
-use crate::{Compiler, Instruction, Register, Size, Value, ValueCodegen};
+use crate::{Compiler, Instruction, Register, Size, Value, ValueCodegen, SCRATCH_REGISTERS};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OperandType {
@@ -57,7 +57,7 @@ impl Operand {
         match self {
             Operand::DeclareVariable(ty, name, value) => {
                 let value = value.codegen(compiler);
-                let variable_location = compiler.variables.allocate(name, &ty).expect("Unable to allocate variable");
+                let variable_location = compiler.scope_manager.get_variable_manager().allocate(name, &ty).expect("Unable to allocate variable");
 
                 // It's impossible for the VariableManager to allocate on the Stack at the moment
                 // if variable_location.is_stack() && value.is_stack()
@@ -72,7 +72,7 @@ impl Operand {
             }
             Operand::SetVariable(name, value) => {
                 let value = value.codegen(compiler);
-                let variable_location = compiler.variables.get(name).expect("Unable to allocate variable");
+                let variable_location = compiler.scope_manager.get_variable_manager().get(name).expect("Unable to allocate variable");
 
                 compiler.new_instruction(Instruction::Move(variable_location.0.as_gen(&variable_location.1.size()), value));
             }
@@ -84,9 +84,16 @@ impl Operand {
                 compiler.new_instruction(Instruction::Call(name.clone()));
             }
             Operand::FunctionDecl(_type, name, operands) => {
+                compiler.scope_manager.enter_scope();
+
                 compiler.new_instruction(Instruction::Label(name.clone()));
                 compiler.new_instruction(Instruction::Push(Register::BP.as_gen(&Size::QuadWord)));
-                compiler.functions.declare_function(name, _type).expect("Function {name} is already defined");
+                // Band-aid fix while i work out a permanent fix
+                for register in SCRATCH_REGISTERS
+                {
+                    compiler.new_instruction(Instruction::Push(register.as_gen(&Size::QuadWord)));
+                }
+                compiler.scope_manager.declare_function_global(name, _type).expect("Function {name} is already defined");
 
                 for op in operands
                 {
@@ -98,14 +105,19 @@ impl Operand {
                             compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&_type.size()), value));
                         }
 
+                        for register in SCRATCH_REGISTERS.iter().rev()
+                        {
+                            compiler.new_instruction(Instruction::Pop(register.as_gen(&Size::QuadWord)));
+                        }
                         compiler.new_instruction(Instruction::Pop(Register::BP.as_gen(&Size::QuadWord)));
                         compiler.new_instruction(Instruction::Return);
+                        return;
                     } else
                     {
                         op.codegen(compiler);
                     }
                 }
-
+                compiler.scope_manager.leave_scope();
             },
             Operand::Return(_) => {
                 eprintln!("Return not paired with function.");
@@ -141,7 +153,7 @@ impl Operand {
             Operand::DropVariable(name) =>
             {
                 // This variable is no longer used anywhere
-                compiler.variables.deallocate(name);
+                compiler.scope_manager.get_variable_manager().deallocate(name);
             }
             Operand::Add(ty, lhs, rhs) => {
                 let lhs = lhs.codegen(compiler);

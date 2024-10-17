@@ -13,6 +13,7 @@ fn deallocation_test()
     ];
 
     module.optimise();
+    println!("{:#?}", module);
 
     println!("{}", module.compile());
 }

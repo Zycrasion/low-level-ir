@@ -1,18 +1,16 @@
-use std::collections::HashMap;
-use crate::{FunctionManager, Instruction, OperandType, Size, ValueCodegen, VariableManager};
+use crate::*;
 
 pub struct Compiler {
-    pub variables: VariableManager,
-    pub functions: FunctionManager,
+
     pub compiled : Vec<Instruction>,
+    pub scope_manager : ScopeManager,
 }
 
 impl Compiler {
     pub fn new() -> Self
     {
         Compiler {
-            variables: VariableManager::new(),
-            functions : FunctionManager::new(),
+            scope_manager : ScopeManager::new(),
             compiled : vec![]
         }
     }

@@ -1,3 +1,9 @@
+mod variables;
+pub use variables::*;
+
+mod scope;
+pub use scope::*;
+
 mod function_manager;
 pub use function_manager::*;
 

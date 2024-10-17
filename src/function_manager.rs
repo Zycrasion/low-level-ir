@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::*;
 
+#[derive(Debug)]
 pub struct FunctionManager
 {
     functions : HashMap<String, OperandType>,

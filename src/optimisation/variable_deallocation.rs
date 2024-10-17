@@ -5,6 +5,8 @@ use crate::*;
 /// Deallocates and also will delete variables that are NEVER used
 pub fn deallocation_pass(ir_module : &mut IRModule)
 {
+    // TODO: Fix this, make sure it visits functions, it's causing errors with the new
+    return;
     let mut operands = Vec::with_capacity(ir_module.operands.capacity());
     let mut variable_last_usage = HashMap::new();
 
