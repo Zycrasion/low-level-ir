@@ -21,9 +21,12 @@ pub const SCRATCH_REGISTERS : &[Register] = &[
 
 
 impl VariableManager {
+    pub fn used_registers(&self) -> Vec<Register>
+    {
+        self.variables.values().map(|v| v.0).collect()
+    }
+    
     pub fn new() -> Self {
-
-
         let mut map = HashMap::new();
 
         for register in SCRATCH_REGISTERS.iter() {

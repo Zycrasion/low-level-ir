@@ -1,4 +1,4 @@
-use crate::{Compiler, Instruction, Register, Size, Value, ValueCodegen, SCRATCH_REGISTERS};
+use crate::{scope, Compiler, Instruction, Register, Size, Value, ValueCodegen, SCRATCH_REGISTERS};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OperandType {
@@ -85,14 +85,11 @@ impl Operand {
             }
             Operand::FunctionDecl(_type, name, operands) => {
                 compiler.scope_manager.enter_scope();
-
                 compiler.new_instruction(Instruction::Label(name.clone()));
                 compiler.new_instruction(Instruction::Push(Register::BP.as_gen(&Size::QuadWord)));
-                // Band-aid fix while i work out a permanent fix
-                for register in SCRATCH_REGISTERS
-                {
-                    compiler.new_instruction(Instruction::Push(register.as_gen(&Size::QuadWord)));
-                }
+                let saved_asm = compiler.compiled.clone();
+                compiler.compiled = vec![];
+
                 compiler.scope_manager.declare_function_global(name, _type).expect("Function {name} is already defined");
 
                 for op in operands
@@ -104,11 +101,24 @@ impl Operand {
                             let value = value.codegen(compiler);
                             compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&_type.size()), value));
                         }
+                        let mut asm = compiler.compiled.clone();
+                        asm.reverse();
+                        compiler.compiled = saved_asm;
+                        let used_registers = compiler.scope_manager.get_variable_manager().used_registers();
 
-                        for register in SCRATCH_REGISTERS.iter().rev()
+                        for reg in used_registers.clone()
                         {
-                            compiler.new_instruction(Instruction::Pop(register.as_gen(&Size::QuadWord)));
+                            asm.push(Instruction::Push(reg.as_gen(&Size::QuadWord)));
                         }
+
+                        asm.reverse();
+                        for reg in used_registers
+                        {
+                            asm.push(Instruction::Pop(reg.as_gen(&Size::QuadWord)));
+                        }
+
+                        compiler.compiled.append(&mut asm);
+                        
                         compiler.new_instruction(Instruction::Pop(Register::BP.as_gen(&Size::QuadWord)));
                         compiler.new_instruction(Instruction::Return);
                         return;

@@ -1,5 +1,6 @@
-use crate::ValueCodegen;
+use crate::{Register, ValueCodegen};
 
+#[derive(Clone)]
 pub enum Instruction
 {
     AsmLiteral(String),
