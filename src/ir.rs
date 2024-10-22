@@ -1,13 +1,13 @@
 use std::{env::var, fmt::Display};
 
-use crate::{deallocation_pass, operand, Compiler, Instruction, Operand, OperandType, Register, Size};
+use crate::{deallocation_pass, operand, Compiler, Instruction, Operand, OperandType, Register, Size, PARAMETER_REGISTERS};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Variable(String),
     Int(String), // Store numerals as strings because we are directly compiling into AMD64
     StringLiteral(String),
-    FunctionCall(String),
+    FunctionCall(String, Vec<Value>),
     Null,
 }
 
@@ -61,8 +61,15 @@ impl Value {
             },
             Value::Int(num) => ValueCodegen::Number(num.clone()),
             Value::StringLiteral(literal) => ValueCodegen::StringLiteral(literal.clone()),
-            Value::FunctionCall(name) => {
+            Value::FunctionCall(name, parameters) => {
+                let function = compiler.scope_manager.get_function(name).expect("No Function Exists");
+                for (i, value) in parameters.iter().enumerate()
+                {
+                    let value = value.codegen(compiler);
+                    compiler.new_instruction(Instruction::Move(PARAMETER_REGISTERS[i].as_gen(&function.1[i].size()), value));
+                }
                 compiler.new_instruction(Instruction::Call(name.clone()));
+
                 ValueCodegen::Register(Register::AX.as_dword())
             }
             Value::Null => panic!(),
