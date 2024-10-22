@@ -1,9 +1,11 @@
-use std::{env::var, fmt::Display};
+use std::{env::var, fmt::Display, ops::Add};
 
 use crate::{deallocation_pass, operand, Compiler, Instruction, Operand, OperandType, Register, Size, PARAMETER_REGISTERS};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
+    Add(Box<Value>, Box<Value>),
+    Sub(Box<Value>, Box<Value>),
     Variable(String),
     Int(String), // Store numerals as strings because we are directly compiling into AMD64
     StringLiteral(String),
@@ -71,6 +73,24 @@ impl Value {
                 compiler.new_instruction(Instruction::Call(name.clone()));
 
                 ValueCodegen::Register(Register::AX.as_dword())
+            }
+            Value::Add(lhs, rhs) => {
+                // TODO: Make Dynamic Sizing
+                let lhs = lhs.codegen(compiler);
+                let rhs = rhs.codegen(compiler);
+                let dst = Register::AX.as_gen(&Size::DoubleWord);
+                compiler.new_instruction(Instruction::Move(dst.clone(), lhs));
+                compiler.new_instruction(Instruction::Add(dst.clone(), rhs));
+                dst
+            },
+            Value::Sub(lhs, rhs) => {
+                // TODO: Make Dynamic Sizing
+                let lhs = lhs.codegen(compiler);
+                let rhs = rhs.codegen(compiler);
+                let dst = Register::AX.as_gen(&Size::DoubleWord);
+                compiler.new_instruction(Instruction::Move(dst.clone(), lhs));
+                compiler.new_instruction(Instruction::Sub(dst.clone(), rhs));
+                dst
             }
             Value::Null => panic!(),
         }
