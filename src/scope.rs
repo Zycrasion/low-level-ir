@@ -12,7 +12,6 @@ impl ScopeManager
     pub fn enter_scope(&mut self)
     {
         self.scopes.push(Scope::new());
-        println!("{:#?}", self.scopes);
     }
 
     pub fn leave_scope(&mut self)
