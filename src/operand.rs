@@ -104,8 +104,6 @@ impl Operand {
                 let saved_asm = compiler.compiled.clone();
                 compiler.compiled = vec![];
 
-                compiler.scope_manager.declare_function_global(name, _type, &parameters.iter().cloned().map(|v| v.1).collect()).expect("Function {name} is already defined");
-
                 for op in operands
                 {
                     if let Operand::Return(value) = op
