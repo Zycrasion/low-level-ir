@@ -85,12 +85,23 @@ impl Operand {
             }
             Operand::FunctionCall(name, parameters) => {
                 let function = compiler.scope_manager.get_function(name).expect("No Function Exists");
+                let mut saved_registers = vec![];
                 for (i, value) in parameters.iter().enumerate()
                 {
                     let value = value.codegen(compiler);
+                    if compiler.scope_manager.get_variable_manager().used_registers().contains(&PARAMETER_REGISTERS[i])
+                    {
+                        compiler.new_instruction(Instruction::Push(PARAMETER_REGISTERS[i].as_gen(&Size::QuadWord)));
+                        saved_registers.push(PARAMETER_REGISTERS[i]);
+                    }
                     compiler.new_instruction(Instruction::Move(PARAMETER_REGISTERS[i].as_gen(&function.1[i].size()), value));
                 }
                 compiler.new_instruction(Instruction::Call(name.clone()));
+                saved_registers.reverse();
+                for reg in saved_registers
+                {
+                    compiler.new_instruction(Instruction::Pop(reg.as_gen(&Size::QuadWord)));
+                }
             }
             Operand::FunctionDecl(_type, name, operands, parameters) => {
                 compiler.scope_manager.enter_scope();
