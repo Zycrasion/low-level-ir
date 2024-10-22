@@ -9,6 +9,15 @@ pub struct VariableManager {
     variables: HashMap<String, (Register, OperandType)>,
 }
 
+pub const PARAMETER_REGISTERS : &[Register] = &[
+    Register::DI,
+    Register::SI,
+    Register::DX,
+    Register::CX,
+    Register::R8,
+    Register::R9,
+];
+
 pub const SCRATCH_REGISTERS : &[Register] = &[
     Register::SI, // System V-Abi scratch registers
     Register::DX,
@@ -61,6 +70,11 @@ impl VariableManager {
         }
 
         Err(())
+    }
+
+    pub fn allocate_parameter(&mut self, var: &String, _type: &OperandType, i : usize) -> () {
+        self.registers.insert(PARAMETER_REGISTERS[i], Some(var.clone()));
+        self.variables.insert(var.clone(), (PARAMETER_REGISTERS[i], *_type));
     }
 
     pub fn get(&self, var: &String) -> Option<(Register, OperandType)> {

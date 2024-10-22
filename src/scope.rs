@@ -29,11 +29,17 @@ impl ScopeManager
         }
     }
 
-    pub fn declare_function_global<S>(&mut self, name : S, _type : &OperandType) -> Result<(), ()>
+    pub fn declare_function_global<S>(&mut self, name : S, _type : &OperandType, params : &Vec<OperandType>) -> Result<(), ()>
         where S : AsRef<str>
     {
         let name = name.as_ref().to_string();
-        self.global_scope.functions.declare_function(&name, _type)
+        self.global_scope.functions.declare_function(&name, _type, params)
+    }
+
+    pub fn get_function<S>(&self, name : S) -> Option<(OperandType, Vec<OperandType>)>
+    where S : AsRef<str>
+    {
+        self.global_scope.functions.get_function_type(&name.as_ref().to_string())
     }
 
     pub fn get_variable_manager(&mut self) -> &mut VariableManager

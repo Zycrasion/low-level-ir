@@ -1,4 +1,6 @@
-use crate::{scope, Compiler, Instruction, Register, Size, Value, ValueCodegen, SCRATCH_REGISTERS};
+use std::{collections::HashMap, hash::Hash};
+
+use crate::{scope, Compiler, Instruction, Register, Size, Value, ValueCodegen, PARAMETER_REGISTERS, SCRATCH_REGISTERS};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OperandType {
@@ -24,7 +26,7 @@ impl OperandType
 pub enum Operand {
     // Type-Explicit
     DeclareVariable(OperandType, String, Value),
-    FunctionDecl(OperandType, String, Vec<Operand>),
+    FunctionDecl(OperandType, String, Vec<Operand>, Vec<(String, OperandType)>),
     Multiply(OperandType, Value, Value),
     Add(OperandType, Value, Value),
     Subtract(OperandType, Value, Value),
@@ -33,7 +35,7 @@ pub enum Operand {
     // Type-Implicit
     SetVariable(String, Value),
     DropVariable(String),
-    FunctionCall(String),
+    FunctionCall(String, Vec<Value>),
     Return(Value),
     InlineAssembly(String),
 }
@@ -45,8 +47,9 @@ impl Operand {
         {
             Self::Multiply(_, a, b) | Self::Add(_, a, b) | Self::Subtract(_, a, b) | Self::Divide(_, a, b) => vec![a.clone(), b.clone()],
             Self::Return(a) | Self::DeclareVariable(_, _, a) | Self::SetVariable(_, a) => vec![a.clone()],
-            Self::DropVariable(_) |  Self::InlineAssembly(_) | Self::FunctionCall(_) => vec![],
-            Self::FunctionDecl(_, _, a) => a.iter().flat_map(|v| v.get_values()).collect()
+            Self::FunctionCall(_, a) => a.clone(),
+            Self::DropVariable(_) |  Self::InlineAssembly(_)  => vec![],
+            Self::FunctionDecl(_, _, a, _) => a.iter().flat_map(|v| v.get_values()).collect()
         }
     }
     
@@ -80,17 +83,28 @@ impl Operand {
             {
                 compiler.new_instruction(Instruction::AsmLiteral(asm.clone()));
             }
-            Operand::FunctionCall(name) => {
+            Operand::FunctionCall(name, parameters) => {
+                let function = compiler.scope_manager.get_function(name).expect("No Function Exists");
+                for (i, value) in parameters.iter().enumerate()
+                {
+                    let value = value.codegen(compiler);
+                    compiler.new_instruction(Instruction::Move(PARAMETER_REGISTERS[i].as_gen(&function.1[i].size()), value));
+                }
                 compiler.new_instruction(Instruction::Call(name.clone()));
             }
-            Operand::FunctionDecl(_type, name, operands) => {
+            Operand::FunctionDecl(_type, name, operands, parameters) => {
                 compiler.scope_manager.enter_scope();
                 compiler.new_instruction(Instruction::Label(name.clone()));
                 compiler.new_instruction(Instruction::Push(Register::BP.as_gen(&Size::QuadWord)));
+                for (i, param) in parameters.iter().enumerate()
+                {
+                    compiler.scope_manager.get_variable_manager().allocate_parameter(&param.0, &param.1, i);
+                }
+
                 let saved_asm = compiler.compiled.clone();
                 compiler.compiled = vec![];
 
-                compiler.scope_manager.declare_function_global(name, _type).expect("Function {name} is already defined");
+                compiler.scope_manager.declare_function_global(name, _type, &parameters.iter().cloned().map(|v| v.1).collect()).expect("Function {name} is already defined");
 
                 for op in operands
                 {
