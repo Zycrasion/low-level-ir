@@ -1,12 +1,39 @@
 use std::collections::HashMap;
 
-
 use crate::*;
+
+#[derive(Debug, Clone, Copy)]
+pub enum VariableLocation
+{
+    Register(Register),
+    StackOffset(u32)
+}
+
+impl VariableLocation
+{
+    pub fn as_reg(&self) -> Option<Register>
+    {
+        match self
+        {
+            VariableLocation::Register(reg) => Some(reg.clone()),
+            _ => None
+        }
+    }
+
+    pub fn as_gen(&self, size : &Size) -> ValueCodegen
+    {
+        match self
+        {
+            VariableLocation::Register(register) => register.as_gen(size),
+            VariableLocation::StackOffset(stack) => ValueCodegen::StackOffset(format!("[rbp-{}]", stack)),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct VariableManager {
-    registers: HashMap<Register, Option<String>>,
-    variables: HashMap<String, (Register, OperandType)>,
+    variables: HashMap<String, (VariableLocation, OperandType)>,
+    stack_location : u32,
 }
 
 pub const PARAMETER_REGISTERS : &[Register] = &[
@@ -18,33 +45,22 @@ pub const PARAMETER_REGISTERS : &[Register] = &[
     Register::R9,
 ];
 
-pub const SCRATCH_REGISTERS : &[Register] = &[
-    Register::SI, // System V-Abi scratch registers
-    Register::DX,
-    Register::CX,
-    Register::R8,
-    Register::R9,
-    Register::R10,
-    Register::R11,
-];
-
 
 impl VariableManager {
     pub fn used_registers(&self) -> Vec<Register>
     {
-        self.variables.values().map(|v| v.0).collect()
+        self.variables.values().filter_map(|v| VariableLocation::as_reg(&v.0)).collect()
+    }
+
+    pub fn used_stack(&self) -> u32
+    {
+        self.stack_location
     }
     
     pub fn new() -> Self {
-        let mut map = HashMap::new();
-
-        for register in SCRATCH_REGISTERS.iter() {
-            map.insert(*register, None);
-        }
-
         Self {
-            registers: map,
             variables: HashMap::new(),
+            stack_location : 0,
         }
     }
 
@@ -55,29 +71,25 @@ impl VariableManager {
             return false;
         }
 
-        *self.registers.get_mut(&self.variables[var].0).unwrap() = None;
-        self.variables.remove(var);
         true
     }
 
-    pub fn allocate(&mut self, var: &String, _type : &OperandType) -> Result<(Register, OperandType), ()> {
-        for reg in SCRATCH_REGISTERS.iter() {
-            if self.registers[reg].is_none() {
-                self.registers.insert(*reg, Some(var.clone()));
-                self.variables.insert(var.clone(), (*reg, *_type));
-                return Ok((*reg, *_type));
-            }
-        }
+    pub fn allocate(&mut self, var: &String, _type : &OperandType) -> Result<(VariableLocation, OperandType), ()> {
+        let size = _type.size().get_bytes();
 
-        Err(())
+        let variable = (VariableLocation::StackOffset(self.stack_location), *_type);
+        self.stack_location += size as u32;
+
+        self.variables.insert(var.clone(), variable);
+
+        Ok(variable)
     }
 
     pub fn allocate_parameter(&mut self, var: &String, _type: &OperandType, i : usize) -> () {
-        self.registers.insert(PARAMETER_REGISTERS[i], Some(var.clone()));
-        self.variables.insert(var.clone(), (PARAMETER_REGISTERS[i], *_type));
+        self.variables.insert(var.clone(), (VariableLocation::Register(PARAMETER_REGISTERS[i]), *_type));
     }
 
-    pub fn get(&self, var: &String) -> Option<(Register, OperandType)> {
+    pub fn get(&self, var: &String) -> Option<(VariableLocation, OperandType)> {
         if !self.variables.contains_key(var) {
             return None;
         }
@@ -85,7 +97,7 @@ impl VariableManager {
         Some(self.variables[var])
     }
 
-    pub fn get_or_allocate(&mut self, var: &String, _type : &OperandType) -> Option<(Register, OperandType)> {
+    pub fn get_or_allocate(&mut self, var: &String, _type : &OperandType) -> Option<(VariableLocation, OperandType)> {
         let _ = self.allocate(var, _type);
         let get = self.get(var);
 

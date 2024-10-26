@@ -1,6 +1,6 @@
 use std::{collections::HashMap, hash::Hash};
 
-use crate::{scope, Compiler, Instruction, Register, Size, Value, ValueCodegen, PARAMETER_REGISTERS, SCRATCH_REGISTERS};
+use crate::{scope, Compiler, Instruction, Register, Size, Value, ValueCodegen, PARAMETER_REGISTERS};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OperandType {
@@ -85,35 +85,24 @@ impl Operand {
             }
             Operand::FunctionCall(name, parameters) => {
                 let function = compiler.scope_manager.get_function(name).expect("No Function Exists");
-                let mut saved_registers = vec![];
                 for (i, value) in parameters.iter().enumerate()
                 {
                     let value = value.codegen(compiler);
-                    if compiler.scope_manager.get_variable_manager().used_registers().contains(&PARAMETER_REGISTERS[i])
-                    {
-                        compiler.new_instruction(Instruction::Push(PARAMETER_REGISTERS[i].as_gen(&Size::QuadWord)));
-                        saved_registers.push(PARAMETER_REGISTERS[i]);
-                    }
                     compiler.new_instruction(Instruction::Move(PARAMETER_REGISTERS[i].as_gen(&function.1[i].size()), value));
                 }
                 compiler.new_instruction(Instruction::Call(name.clone()));
-                saved_registers.reverse();
-                for reg in saved_registers
-                {
-                    compiler.new_instruction(Instruction::Pop(reg.as_gen(&Size::QuadWord)));
-                }
             }
             Operand::FunctionDecl(_type, name, operands, parameters) => {
                 compiler.scope_manager.enter_scope();
                 compiler.new_instruction(Instruction::Label(name.clone()));
                 compiler.new_instruction(Instruction::Push(Register::BP.as_gen(&Size::QuadWord)));
+                compiler.new_instruction(Instruction::Label("[PLACEHOLDER]".to_string()));
+                let index = compiler.compiled.len() - 1;
+
                 for (i, param) in parameters.iter().enumerate()
                 {
                     compiler.scope_manager.get_variable_manager().allocate_parameter(&param.0, &param.1, i);
                 }
-
-                let saved_asm = compiler.compiled.clone();
-                compiler.compiled = vec![];
 
                 for op in operands
                 {
@@ -124,24 +113,9 @@ impl Operand {
                             let value = value.codegen(compiler);
                             compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&_type.size()), value));
                         }
-                        let mut asm = compiler.compiled.clone();
-                        asm.reverse();
-                        compiler.compiled = saved_asm;
-                        let used_registers = compiler.scope_manager.get_variable_manager().used_registers();
 
-                        for reg in used_registers.clone()
-                        {
-                            asm.push(Instruction::Push(reg.as_gen(&Size::QuadWord)));
-                        }
-
-                        asm.reverse();
-                        for reg in used_registers
-                        {
-                            asm.push(Instruction::Pop(reg.as_gen(&Size::QuadWord)));
-                        }
-
-                        compiler.compiled.append(&mut asm);
-                        
+                        let stack = compiler.scope_manager.get_variable_manager().used_stack();
+                        compiler.compiled[index] = Instruction::Sub(Register::BP.as_gen(&Size::QuadWord), ValueCodegen::Number(stack.to_string()));
                         compiler.new_instruction(Instruction::Pop(Register::BP.as_gen(&Size::QuadWord)));
                         compiler.new_instruction(Instruction::Return);
                         return;
