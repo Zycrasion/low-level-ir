@@ -111,7 +111,13 @@ impl Operand {
                         if *value != Value::Null
                         {
                             let value = value.codegen(compiler);
-                            compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&_type.size()), value));
+                            
+                            // Edge case where the return value is a maths expression
+                            // Since all Maths Expressions are calculated using the AX register there is no need to move it...
+                            if value.inner() != Register::AX.as_size(&_type.size())
+                            {
+                                compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&_type.size()), value));
+                            }
                         }
 
                         let stack = compiler.scope_manager.get_variable_manager().used_stack();
