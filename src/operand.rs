@@ -115,7 +115,13 @@ impl Operand {
                         }
 
                         let stack = compiler.scope_manager.get_variable_manager().used_stack();
-                        compiler.compiled[index] = Instruction::Sub(Register::BP.as_gen(&Size::QuadWord), ValueCodegen::Number(stack.to_string()));
+                        if stack == 0
+                        {
+                            compiler.compiled.remove(index);
+                        } else
+                        {
+                            compiler.compiled[index] = Instruction::Sub(Register::BP.as_gen(&Size::QuadWord), ValueCodegen::Number(stack.to_string()));
+                        }
                         compiler.new_instruction(Instruction::Pop(Register::BP.as_gen(&Size::QuadWord)));
                         compiler.new_instruction(Instruction::Return);
                         return;
