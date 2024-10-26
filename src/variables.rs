@@ -77,8 +77,8 @@ impl VariableManager {
     pub fn allocate(&mut self, var: &String, _type : &OperandType) -> Result<(VariableLocation, OperandType), ()> {
         let size = _type.size().get_bytes();
 
-        let variable = (VariableLocation::StackOffset(self.stack_location), *_type);
         self.stack_location += size as u32;
+        let variable = (VariableLocation::StackOffset(self.stack_location), *_type);
 
         self.variables.insert(var.clone(), variable);
 
