@@ -96,6 +96,7 @@ impl Operand {
                 compiler.scope_manager.enter_scope();
                 compiler.new_instruction(Instruction::Label(name.clone()));
                 compiler.new_instruction(Instruction::Push(Register::BP.as_gen(&Size::QuadWord)));
+                compiler.new_instruction(Instruction::Move(Register::BP.as_gen(&Size::QuadWord), Register::SP.as_gen(&Size::QuadWord)));
                 compiler.new_instruction(Instruction::Label("[PLACEHOLDER]".to_string()));
                 let index = compiler.compiled.len() - 1;
 
@@ -126,8 +127,9 @@ impl Operand {
                             compiler.compiled.remove(index);
                         } else
                         {
-                            compiler.compiled[index] = Instruction::Sub(Register::BP.as_gen(&Size::QuadWord), ValueCodegen::Number(stack.to_string()));
+                            compiler.compiled[index] = Instruction::Sub(Register::SP.as_gen(&Size::QuadWord), ValueCodegen::Number(stack.to_string()));
                         }
+                        compiler.new_instruction(Instruction::Move(Register::SP.as_gen(&Size::QuadWord), Register::BP.as_gen(&Size::QuadWord)));
                         compiler.new_instruction(Instruction::Pop(Register::BP.as_gen(&Size::QuadWord)));
                         compiler.new_instruction(Instruction::Return);
                         return;
