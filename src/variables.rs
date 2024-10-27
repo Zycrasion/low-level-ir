@@ -34,7 +34,7 @@ impl VariableLocation
         match self
         {
             VariableLocation::Register(register) => register.as_ptr(),
-            VariableLocation::StackOffset(stack) => ValueCodegen::Pointer(format!("QWORD PTR [rbp-{}]", stack)),
+            VariableLocation::StackOffset(stack) => ValueCodegen::Pointer(format!("QWORD [rbp-{}]", stack)),
         }
     }
 }
