@@ -6,6 +6,8 @@ use crate::{deallocation_pass, operand, Compiler, Instruction, Operand, OperandT
 pub enum Value {
     Add(Box<Value>, Box<Value>),
     Sub(Box<Value>, Box<Value>),
+    Reference(String),
+    Dereference(String),
     Variable(String),
     Int(String), // Store numerals as strings because we are directly compiling into AMD64
     StringLiteral(String),
@@ -17,6 +19,7 @@ pub enum Value {
 pub enum ValueCodegen {
     Register(String),
     StackOffset(String),
+    Pointer(String),
     Number(String),
     StringLiteral(String),
 }
@@ -48,6 +51,7 @@ impl ValueCodegen {
         match self {
             ValueCodegen::Register(s)
             | ValueCodegen::StackOffset(s)
+            | ValueCodegen::Pointer(s)
             | ValueCodegen::Number(s)
             | ValueCodegen::StringLiteral(s) => s.clone(),
         }
@@ -57,6 +61,17 @@ impl ValueCodegen {
 impl Value {
     pub fn codegen(&self, compiler: &mut Compiler) -> ValueCodegen {
         match self {
+            Value::Reference(ref name) => {
+                let variable = compiler.scope_manager.get_variable_manager().get(name).expect("Variable {name} does not exist.");
+                compiler.new_instruction(Instruction::LoadAddress(Register::AX.as_gen(&Size::QuadWord), variable.0.as_gen(&variable.1.size())));
+                Register::AX.as_gen(&Size::QuadWord)
+            },
+            Value::Dereference(ref name) => {
+                let variable = compiler.scope_manager.get_variable_manager().get(name).expect("Variable {name} does not exist.");
+                compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&Size::QuadWord), variable.0.as_ptr()));
+                compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&variable.1.size()), Register::AX.as_ptr()));
+                Register::AX.as_gen(&variable.1.size())
+            },
             Value::Variable(ref name) => {
                 let variable = compiler.scope_manager.get_variable_manager().get(name).expect("Variable {name} does not exist.");
                 variable.0.as_gen(&variable.1.size())

@@ -25,6 +25,11 @@ pub enum Register {
 }
 
 impl Register {
+    pub fn as_ptr(&self) -> ValueCodegen
+    {
+        ValueCodegen::Pointer(format!("QWORD PTR [{}]", self.as_qword()))
+    }
+
     pub fn as_index(&self) -> usize {
         unsafe { std::mem::transmute(self) }
     }

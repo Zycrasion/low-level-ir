@@ -13,6 +13,7 @@ pub enum Instruction
     Pop(ValueCodegen),
     Add(ValueCodegen, ValueCodegen),
     Sub(ValueCodegen, ValueCodegen),
+    LoadAddress(ValueCodegen, ValueCodegen),
     Call(String)
 }
 
@@ -31,6 +32,7 @@ impl Instruction
             Instruction::Pop(dst)               => format!("pop {dst}"),
             Instruction::Add(dst, src)          => format!("add {dst}, {src}"),
             Instruction::Sub(dst, src)          => format!("sub {dst}, {src}"),
+            Instruction::LoadAddress(dst, src)  => format!("lea {dst}, {src}"),
             Instruction::Call(name)             => format!("call {name}"),
             Instruction::AsmLiteral(literal)    => literal.clone()
         }

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::format};
 
 use crate::*;
 
@@ -26,6 +26,15 @@ impl VariableLocation
         {
             VariableLocation::Register(register) => register.as_gen(size),
             VariableLocation::StackOffset(stack) => ValueCodegen::StackOffset(format!("[rbp-{}]", stack)),
+        }
+    }
+
+    pub fn as_ptr(&self) -> ValueCodegen
+    {
+        match self
+        {
+            VariableLocation::Register(register) => register.as_ptr(),
+            VariableLocation::StackOffset(stack) => ValueCodegen::Pointer(format!("QWORD PTR [rbp-{}]", stack)),
         }
     }
 }
