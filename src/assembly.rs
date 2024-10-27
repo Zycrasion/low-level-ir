@@ -1,4 +1,4 @@
-use crate::{Register, ValueCodegen};
+use crate::*;
 
 #[derive(Clone)]
 pub enum Instruction
@@ -27,7 +27,7 @@ impl Instruction
             Instruction::Move(dst, src)         => format!("mov {dst}, {src}"),
             Instruction::IntMultiply(dst, src)  => format!("imul {dst}, {src}"),
             Instruction::Multiply(dst, src)     => format!("mul {dst}, {src}"),
-            Instruction::Return                 => format!("ret"),
+            Instruction::Return                 => "ret".to_string(),
             Instruction::Push(src)              => format!("push {src}"),
             Instruction::Pop(dst)               => format!("pop {dst}"),
             Instruction::Add(dst, src)          => format!("add {dst}, {src}"),

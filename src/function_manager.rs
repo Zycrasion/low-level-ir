@@ -23,14 +23,14 @@ impl FunctionManager
         self.functions.get(name).cloned()
     }
 
-    pub fn declare_function(&mut self, name : &String, _type : &OperandType, params : &Vec<OperandType>) -> Result<(), ()>
+    pub fn declare_function(&mut self, name : &String, _type : &OperandType, params : &[OperandType]) -> Result<(), ()>
     {
         if self.functions.contains_key(name)
         {
             return Err(())
         }
 
-        self.functions.insert(name.clone(), (_type.clone(), params.clone()));
+        self.functions.insert(name.clone(), (_type.clone(), params.to_vec()));
         
         Ok(())
     }

@@ -1,6 +1,4 @@
-use std::{collections::HashMap, hash::Hash};
-
-use crate::{scope, Compiler, Instruction, Register, Size, Value, ValueCodegen, PARAMETER_REGISTERS};
+use crate::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OperandType {
@@ -71,7 +69,7 @@ impl Operand {
         match self {
             Operand::DeclareVariable(ty, name, value) => {
                 let value = value.codegen(compiler);
-                let variable_location = compiler.scope_manager.get_variable_manager().allocate(name, &ty).expect("Unable to allocate variable");
+                let variable_location = compiler.scope_manager.get_variable_manager().allocate(name, ty).expect("Unable to allocate variable");
 
                 // It's impossible for the VariableManager to allocate on the Stack at the moment
                 // if variable_location.is_stack() && value.is_stack()
@@ -187,12 +185,12 @@ impl Operand {
                 // This variable is no longer used anywhere
                 compiler.scope_manager.get_variable_manager().deallocate(name);
             }
-            Operand::Add(ty, lhs, rhs) => {
+            Operand::Add(_ty, lhs, rhs) => {
                 let lhs = lhs.codegen(compiler);
                 let rhs = rhs.codegen(compiler);
                 compiler.new_instruction(Instruction::Add(lhs, rhs))
             }
-            Operand::Subtract(ty, lhs, rhs) => {
+            Operand::Subtract(_ty, lhs, rhs) => {
                 let lhs = lhs.codegen(compiler);
                 let rhs = rhs.codegen(compiler);
                 compiler.new_instruction(Instruction::Sub(lhs, rhs))

@@ -1,6 +1,5 @@
-use std::collections::HashMap;
 
-use crate::{OperandType, Size, ValueCodegen};
+use crate::{Size, ValueCodegen};
 
 
 #[repr(usize)]

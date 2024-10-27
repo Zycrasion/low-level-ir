@@ -1,6 +1,9 @@
 mod variables;
 pub use variables::*;
 
+mod value;
+pub use value::*;
+
 mod scope;
 pub use scope::*;
 

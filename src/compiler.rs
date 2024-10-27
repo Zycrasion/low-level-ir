@@ -20,3 +20,10 @@ impl Compiler {
         self.compiled.push(instr)
     }
 }
+
+impl Default for Compiler
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
