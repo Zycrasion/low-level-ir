@@ -25,7 +25,7 @@ impl VariableLocation
         match self
         {
             VariableLocation::Register(register) => register.as_gen(size),
-            VariableLocation::StackOffset(stack) => ValueCodegen::StackOffset(format!("[rbp-{}]", stack)),
+            VariableLocation::StackOffset(stack) => ValueCodegen::StackOffset(format!("{} [rbp-{}]", size.name(), stack)),
         }
     }
 
