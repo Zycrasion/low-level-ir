@@ -71,7 +71,7 @@ impl Value {
                 compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&Size::QuadWord), variable.0.as_ptr()));
                 let deref_size = variable.1.deref_size().expect("Not a pointer");
                 compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&deref_size), Register::AX.as_deref(&deref_size)));
-                Register::AX.as_gen(&variable.1.size())
+                Register::AX.as_gen(&deref_size)
             },
             Value::Variable(ref name) => {
                 let variable = compiler.scope_manager.get_variable_manager().get(name).expect("Variable {name} does not exist.");
