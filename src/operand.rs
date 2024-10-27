@@ -2,11 +2,12 @@ use std::{collections::HashMap, hash::Hash};
 
 use crate::{scope, Compiler, Instruction, Register, Size, Value, ValueCodegen, PARAMETER_REGISTERS};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OperandType {
     Undefined,
     Int(Size),
-    UInt(Size)
+    UInt(Size),
+    Pointer(Box<OperandType>)
 }
 
 impl OperandType
@@ -18,6 +19,7 @@ impl OperandType
             OperandType::Undefined => Size::Byte,
             OperandType::Int(size) |
             OperandType::UInt(size) => *size,
+            OperandType::Pointer(_) => Size::QuadWord,
         }
     }
 }

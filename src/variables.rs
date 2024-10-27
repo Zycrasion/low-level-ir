@@ -87,15 +87,15 @@ impl VariableManager {
         let size = _type.size().get_bytes();
 
         self.stack_location += size as u32;
-        let variable = (VariableLocation::StackOffset(self.stack_location), *_type);
+        let variable = (VariableLocation::StackOffset(self.stack_location), _type.clone());
 
-        self.variables.insert(var.clone(), variable);
+        self.variables.insert(var.clone(), variable.clone());
 
         Ok(variable)
     }
 
     pub fn allocate_parameter(&mut self, var: &String, _type: &OperandType, i : usize) -> () {
-        self.variables.insert(var.clone(), (VariableLocation::Register(PARAMETER_REGISTERS[i]), *_type));
+        self.variables.insert(var.clone(), (VariableLocation::Register(PARAMETER_REGISTERS[i]), _type.clone()));
     }
 
     pub fn get(&self, var: &String) -> Option<(VariableLocation, OperandType)> {
@@ -103,7 +103,7 @@ impl VariableManager {
             return None;
         }
 
-        Some(self.variables[var])
+        Some(self.variables[var].clone())
     }
 
     pub fn get_or_allocate(&mut self, var: &String, _type : &OperandType) -> Option<(VariableLocation, OperandType)> {

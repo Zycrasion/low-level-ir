@@ -30,7 +30,7 @@ impl FunctionManager
             return Err(())
         }
 
-        self.functions.insert(name.clone(), (*_type, params.clone()));
+        self.functions.insert(name.clone(), (_type.clone(), params.clone()));
         
         Ok(())
     }
