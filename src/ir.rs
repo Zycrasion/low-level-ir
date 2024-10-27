@@ -4,8 +4,8 @@ use crate::{deallocation_pass, operand, Compiler, Instruction, Operand, OperandT
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
-    Add(Box<Value>, Box<Value>),
-    Sub(Box<Value>, Box<Value>),
+    Add(OperandType, Box<Value>, Box<Value>),
+    Sub(OperandType, Box<Value>, Box<Value>),
     Reference(String),
     Dereference(String),
     Variable(String),
@@ -90,20 +90,20 @@ impl Value {
 
                 ValueCodegen::Register(Register::AX.as_dword())
             }
-            Value::Add(lhs, rhs) => {
+            Value::Add(ty, lhs, rhs) => {
                 // TODO: Make Dynamic Sizing
                 let lhs = lhs.codegen(compiler);
                 let rhs = rhs.codegen(compiler);
-                let dst = Register::AX.as_gen(&Size::DoubleWord);
+                let dst = Register::AX.as_gen(&ty.size());
                 compiler.new_instruction(Instruction::Move(dst.clone(), lhs));
                 compiler.new_instruction(Instruction::Add(dst.clone(), rhs));
                 dst
             },
-            Value::Sub(lhs, rhs) => {
+            Value::Sub(ty, lhs, rhs) => {
                 // TODO: Make Dynamic Sizing
                 let lhs = lhs.codegen(compiler);
                 let rhs = rhs.codegen(compiler);
-                let dst = Register::AX.as_gen(&Size::DoubleWord);
+                let dst = Register::AX.as_gen(&ty.size());
                 compiler.new_instruction(Instruction::Move(dst.clone(), lhs));
                 compiler.new_instruction(Instruction::Sub(dst.clone(), rhs));
                 dst
