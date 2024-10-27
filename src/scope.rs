@@ -7,6 +7,12 @@ pub struct ScopeManager
     global_scope : Scope
 }
 
+impl Default for ScopeManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ScopeManager
 {
     pub fn enter_scope(&mut self)
@@ -28,11 +34,11 @@ impl ScopeManager
         }
     }
 
-    pub fn declare_function_global<S>(&mut self, name : S, _type : &OperandType, params : &Vec<OperandType>) -> Result<(), ()>
+    pub fn declare_function_global<S>(&mut self, name : S, _type : &OperandType, params : &[OperandType])
         where S : AsRef<str>
     {
         let name = name.as_ref().to_string();
-        self.global_scope.functions.declare_function(&name, _type, params)
+        self.global_scope.functions.declare_function(&name, _type, params);
     }
 
     pub fn get_function<S>(&self, name : S) -> Option<(OperandType, Vec<OperandType>)>
@@ -43,7 +49,7 @@ impl ScopeManager
 
     pub fn get_variable_manager(&mut self) -> &mut VariableManager
     {   
-        if self.scopes.len() == 0
+        if self.scopes.is_empty()
         {
             eprintln!("No Valid Scopes! {:#?}", self.scopes);
             panic!();
@@ -59,6 +65,12 @@ pub struct Scope
 {
     pub variables: VariableManager,
     pub functions: FunctionManager,
+}
+
+impl Default for Scope {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Scope

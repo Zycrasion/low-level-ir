@@ -87,19 +87,11 @@ impl Display for ValueCodegen {
 
 impl ValueCodegen {
     pub fn is_register(&self) -> bool {
-        if let ValueCodegen::Register(_) = self {
-            true
-        } else {
-            false
-        }
+        matches!(self, ValueCodegen::Register(_))
     }
 
     pub fn is_stack(&self) -> bool {
-        if let ValueCodegen::StackOffset(_) = self {
-            true
-        } else {
-            false
-        }
+        matches!(self, ValueCodegen::StackOffset(_))
     }
 
     pub fn inner(&self) -> String {

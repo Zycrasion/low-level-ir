@@ -134,16 +134,14 @@ impl Operand {
                         if stack == 0
                         {
                             compiler.compiled.remove(index);
-                        } else
-                        {
+                        } else {
                             compiler.compiled[index] = Instruction::Sub(Register::SP.as_gen(&Size::QuadWord), ValueCodegen::Number(stack.to_string()));
                         }
                         compiler.new_instruction(Instruction::Move(Register::SP.as_gen(&Size::QuadWord), Register::BP.as_gen(&Size::QuadWord)));
                         compiler.new_instruction(Instruction::Pop(Register::BP.as_gen(&Size::QuadWord)));
                         compiler.new_instruction(Instruction::Return);
                         return;
-                    } else
-                    {
+                    } else {
                         op.codegen(compiler);
                     }
                 }
@@ -164,8 +162,7 @@ impl Operand {
                     if let OperandType::Int(size) = _ty
                     {
                         compiler.new_instruction(Instruction::IntMultiply(Register::AX.as_gen(size), rhs));
-                    } else
-                    {
+                    } else {
                         compiler.new_instruction(Instruction::Multiply(Register::AX.as_gen(size), rhs));
                     }
                     compiler.new_instruction(Instruction::Move(lhs, Register::AX.as_gen(size)));
@@ -175,8 +172,7 @@ impl Operand {
                 if let OperandType::Int(size) = _ty
                 {
                     compiler.new_instruction(Instruction::IntMultiply(Register::AX.as_gen(size), rhs));
-                } else
-                {
+                } else {
                     compiler.new_instruction(Instruction::Multiply(Register::AX.as_gen(size), rhs));
                 }
             }

@@ -15,7 +15,7 @@ impl VariableLocation
     {
         match self
         {
-            VariableLocation::Register(reg) => Some(reg.clone()),
+            VariableLocation::Register(reg) => Some(*reg),
             _ => None
         }
     }
@@ -55,6 +55,12 @@ pub const PARAMETER_REGISTERS : &[Register] = &[
 ];
 
 
+impl Default for VariableManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl VariableManager {
     pub fn used_registers(&self) -> Vec<Register>
     {
@@ -83,19 +89,19 @@ impl VariableManager {
         true
     }
 
-    pub fn allocate(&mut self, var: &String, _type : &OperandType) -> Result<(VariableLocation, OperandType), ()> {
+    pub fn allocate(&mut self, var: &str, _type : &OperandType) -> Option<(VariableLocation, OperandType)> {
         let size = _type.size().get_bytes();
 
         self.stack_location += size as u32;
         let variable = (VariableLocation::StackOffset(self.stack_location), _type.clone());
 
-        self.variables.insert(var.clone(), variable.clone());
+        self.variables.insert(var.to_string(), variable.clone());
 
-        Ok(variable)
+        Some(variable)
     }
 
-    pub fn allocate_parameter(&mut self, var: &String, _type: &OperandType, i : usize) -> () {
-        self.variables.insert(var.clone(), (VariableLocation::Register(PARAMETER_REGISTERS[i]), _type.clone()));
+    pub fn allocate_parameter(&mut self, var: &str, _type: &OperandType, i : usize) {
+        self.variables.insert(var.to_string(), (VariableLocation::Register(PARAMETER_REGISTERS[i]), _type.clone()));
     }
 
     pub fn get(&self, var: &String) -> Option<(VariableLocation, OperandType)> {

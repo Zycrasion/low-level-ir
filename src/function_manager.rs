@@ -8,6 +8,12 @@ pub struct FunctionManager
     functions : HashMap<String, (OperandType, Vec<OperandType>)>,
 }
 
+impl Default for FunctionManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FunctionManager
 {
     pub fn new() -> Self
@@ -23,15 +29,14 @@ impl FunctionManager
         self.functions.get(name).cloned()
     }
 
-    pub fn declare_function(&mut self, name : &String, _type : &OperandType, params : &[OperandType]) -> Result<(), ()>
+    pub fn declare_function(&mut self, name : &String, _type : &OperandType, params : &[OperandType])
     {
         if self.functions.contains_key(name)
         {
-            return Err(())
+            // TODO: Return a custom error type
+            return;
         }
 
         self.functions.insert(name.clone(), (_type.clone(), params.to_vec()));
-        
-        Ok(())
     }
 }
