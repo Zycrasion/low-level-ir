@@ -22,6 +22,15 @@ impl OperandType
             OperandType::Pointer(_) => Size::QuadWord,
         }
     }
+
+    pub fn deref_size(&self) -> Option<Size>
+    {
+        match self
+        {
+            OperandType::Pointer(inner) => Some(inner.size()),
+            _ => None
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
