@@ -30,6 +30,11 @@ impl Register {
         ValueCodegen::Pointer(format!("QWORD [{}]", self.as_qword()))
     }
 
+    pub fn as_deref(&self, size : &Size) -> ValueCodegen
+    {
+        ValueCodegen::Pointer(format!("{} [{}]", size.name(), self.as_qword()))
+    }
+
     pub fn as_index(&self) -> usize {
         unsafe { std::mem::transmute(self) }
     }
