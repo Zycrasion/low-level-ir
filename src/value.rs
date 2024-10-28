@@ -4,8 +4,8 @@ pub use crate::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
-    Add(OperandType, Box<Value>, Box<Value>),
-    Sub(OperandType, Box<Value>, Box<Value>),
+    Add(Box<Value>, Box<Value>),
+    Sub(Box<Value>, Box<Value>),
     Reference(String),
     Dereference(String),
     Variable(String),
@@ -16,7 +16,7 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn codegen(&self, compiler: &mut Compiler) -> ValueCodegen {
+    pub fn codegen(&self, compiler: &mut Compiler, ty : OperandType) -> ValueCodegen {
         match self {
             Value::Reference(ref name) => {
                 let variable = compiler.scope_manager.get_variable_manager().get(name).expect("Variable {name} does not exist.");
@@ -40,26 +40,26 @@ impl Value {
                 let function = compiler.scope_manager.get_function(name).expect("No Function Exists");
                 for (i, value) in parameters.iter().enumerate()
                 {
-                    let value = value.codegen(compiler);
+                    let value = value.codegen(compiler, function.1[i].clone());
                     compiler.new_instruction(Instruction::Move(PARAMETER_REGISTERS[i].as_gen(&function.1[i].size()), value));
                 }
                 compiler.new_instruction(Instruction::Call(name.clone()));
 
                 ValueCodegen::Register(Register::AX.as_dword())
             }
-            Value::Add(ty, lhs, rhs) => {
+            Value::Add(lhs, rhs) => {
                 // TODO: Make Dynamic Sizing
-                let lhs = lhs.codegen(compiler);
-                let rhs = rhs.codegen(compiler);
+                let lhs = lhs.codegen(compiler, ty.clone());
+                let rhs = rhs.codegen(compiler, ty.clone());
                 let dst = Register::AX.as_gen(&ty.size());
                 compiler.new_instruction(Instruction::Move(dst.clone(), lhs));
                 compiler.new_instruction(Instruction::Add(dst.clone(), rhs));
                 dst
             },
-            Value::Sub(ty, lhs, rhs) => {
+            Value::Sub(lhs, rhs) => {
                 // TODO: Make Dynamic Sizing
-                let lhs = lhs.codegen(compiler);
-                let rhs = rhs.codegen(compiler);
+                let lhs = lhs.codegen(compiler, ty.clone());
+                let rhs = rhs.codegen(compiler, ty.clone());
                 let dst = Register::AX.as_gen(&ty.size());
                 compiler.new_instruction(Instruction::Move(dst.clone(), lhs));
                 compiler.new_instruction(Instruction::Sub(dst.clone(), rhs));

@@ -68,7 +68,7 @@ impl Operand {
     ) {
         match self {
             Operand::DeclareVariable(ty, name, value) => {
-                let value = value.codegen(compiler);
+                let value = value.codegen(compiler, ty.clone());
                 let variable_location = compiler.scope_manager.get_variable_manager().allocate(name, ty).expect("Unable to allocate variable");
 
                 // It's impossible for the VariableManager to allocate on the Stack at the moment
@@ -83,10 +83,10 @@ impl Operand {
                 compiler.new_instruction(Instruction::Move(variable_location.0.as_gen(&ty.size()), value))
             }
             Operand::SetVariable(name, value) => {
-                let value = value.codegen(compiler);
-                let variable_location = compiler.scope_manager.get_variable_manager().get(name).expect("Unable to allocate variable");
+                let variable_information = compiler.scope_manager.get_variable_manager().get(name).expect("Unable to allocate variable");
+                let value = value.codegen(compiler, variable_information.1.clone());
 
-                compiler.new_instruction(Instruction::Move(variable_location.0.as_gen(&variable_location.1.size()), value));
+                compiler.new_instruction(Instruction::Move(variable_information.0.as_gen(&variable_information.1.size()), value));
             }
             Operand::InlineAssembly(asm) =>
             {
@@ -96,12 +96,12 @@ impl Operand {
                 let function = compiler.scope_manager.get_function(name).expect("No Function Exists");
                 for (i, value) in parameters.iter().enumerate()
                 {
-                    let value = value.codegen(compiler);
+                    let value = value.codegen(compiler, function.1[i].clone());
                     compiler.new_instruction(Instruction::Move(PARAMETER_REGISTERS[i].as_gen(&function.1[i].size()), value));
                 }
                 compiler.new_instruction(Instruction::Call(name.clone()));
             }
-            Operand::FunctionDecl(_type, name, operands, parameters) => {
+            Operand::FunctionDecl(return_type, name, operands, parameters) => {
                 compiler.scope_manager.enter_scope();
                 compiler.new_instruction(Instruction::Label(name.clone()));
                 compiler.new_instruction(Instruction::Push(Register::BP.as_gen(&Size::QuadWord)));
@@ -120,13 +120,13 @@ impl Operand {
                     {
                         if *value != Value::Null
                         {
-                            let value = value.codegen(compiler);
+                            let value = value.codegen(compiler, return_type.clone());
                             
                             // Edge case where the return value is a maths expression
                             // Since all Maths Expressions are calculated using the AX register there is no need to move it...
-                            if value.inner() != Register::AX.as_size(&_type.size())
+                            if value.inner() != Register::AX.as_size(&return_type.size())
                             {
-                                compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&_type.size()), value));
+                                compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&return_type.size()), value));
                             }
                         }
 
@@ -151,47 +151,14 @@ impl Operand {
                 eprintln!("Return not paired with function.");
                 panic!();
             },
-            Operand::Multiply(_ty, lhs, rhs) => {
-                let lhs = lhs.codegen(compiler);
-                let rhs = rhs.codegen(compiler);    
-                let size = &_ty.size();
-
-                if lhs.is_stack() && rhs.is_stack()
-                {
-                    compiler.new_instruction(Instruction::Move(Register::AX.as_gen(size), lhs.clone()));
-                    if let OperandType::Int(size) = _ty
-                    {
-                        compiler.new_instruction(Instruction::IntMultiply(Register::AX.as_gen(size), rhs));
-                    } else {
-                        compiler.new_instruction(Instruction::Multiply(Register::AX.as_gen(size), rhs));
-                    }
-                    compiler.new_instruction(Instruction::Move(lhs, Register::AX.as_gen(size)));
-                    return;
-                }
-
-                if let OperandType::Int(size) = _ty
-                {
-                    compiler.new_instruction(Instruction::IntMultiply(Register::AX.as_gen(size), rhs));
-                } else {
-                    compiler.new_instruction(Instruction::Multiply(Register::AX.as_gen(size), rhs));
-                }
-            }
             Operand::DropVariable(name) =>
             {
                 // This variable is no longer used anywhere
                 compiler.scope_manager.get_variable_manager().deallocate(name);
             }
-            Operand::Add(_ty, lhs, rhs) => {
-                let lhs = lhs.codegen(compiler);
-                let rhs = rhs.codegen(compiler);
-                compiler.new_instruction(Instruction::Add(lhs, rhs))
-            }
-            Operand::Subtract(_ty, lhs, rhs) => {
-                let lhs = lhs.codegen(compiler);
-                let rhs = rhs.codegen(compiler);
-                compiler.new_instruction(Instruction::Sub(lhs, rhs))
-            },
+            Operand::Add(_, _, _) | Operand::Subtract(_, _, _) => {},
             Operand::Divide(_, _, _) => todo!(),
+            Operand::Multiply(_, _, _) => todo!(),
         }
     }
 }
