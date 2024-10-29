@@ -37,13 +37,7 @@ impl Value {
             Value::Int(num) => ValueCodegen::Number(num.clone()),
             Value::StringLiteral(literal) => ValueCodegen::StringLiteral(literal.clone()),
             Value::FunctionCall(name, parameters) => {
-                let function = compiler.scope_manager.get_function(name).expect("No Function Exists");
-                for (i, value) in parameters.iter().enumerate()
-                {
-                    let value = value.codegen(compiler, &function.1[i]);
-                    compiler.new_instruction(Instruction::Move(PARAMETER_REGISTERS[i].as_gen(&function.1[i].size()), value));
-                }
-                compiler.new_instruction(Instruction::Call(name.clone()));
+                function_call(name, parameters, compiler);
 
                 ValueCodegen::Register(Register::AX.as_dword())
             }
