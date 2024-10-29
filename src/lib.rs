@@ -10,9 +10,6 @@ pub use scope::*;
 mod function_manager;
 pub use function_manager::*;
 
-mod optimisation;
-pub use optimisation::*;
-
 mod registers;
 pub use registers::*;
 
