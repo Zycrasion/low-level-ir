@@ -16,7 +16,7 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn codegen(&self, compiler: &mut Compiler, ty : OperandType) -> ValueCodegen {
+    pub fn codegen(&self, compiler: &mut Compiler, ty : &OperandType) -> ValueCodegen {
         match self {
             Value::Reference(ref name) => {
                 let variable = compiler.scope_manager.get_variable_manager().get(name).expect("Variable {name} does not exist.");
@@ -40,7 +40,7 @@ impl Value {
                 let function = compiler.scope_manager.get_function(name).expect("No Function Exists");
                 for (i, value) in parameters.iter().enumerate()
                 {
-                    let value = value.codegen(compiler, function.1[i].clone());
+                    let value = value.codegen(compiler, &function.1[i]);
                     compiler.new_instruction(Instruction::Move(PARAMETER_REGISTERS[i].as_gen(&function.1[i].size()), value));
                 }
                 compiler.new_instruction(Instruction::Call(name.clone()));
@@ -49,8 +49,8 @@ impl Value {
             }
             Value::Add(lhs, rhs) => {
                 // TODO: Make Dynamic Sizing
-                let lhs = lhs.codegen(compiler, ty.clone());
-                let rhs = rhs.codegen(compiler, ty.clone());
+                let lhs = lhs.codegen(compiler, ty);
+                let rhs = rhs.codegen(compiler, ty);
                 let dst = Register::AX.as_gen(&ty.size());
                 compiler.new_instruction(Instruction::Move(dst.clone(), lhs));
                 compiler.new_instruction(Instruction::Add(dst.clone(), rhs));
@@ -58,8 +58,8 @@ impl Value {
             },
             Value::Sub(lhs, rhs) => {
                 // TODO: Make Dynamic Sizing
-                let lhs = lhs.codegen(compiler, ty.clone());
-                let rhs = rhs.codegen(compiler, ty.clone());
+                let lhs = lhs.codegen(compiler, ty);
+                let rhs = rhs.codegen(compiler, ty);
                 let dst = Register::AX.as_gen(&ty.size());
                 compiler.new_instruction(Instruction::Move(dst.clone(), lhs));
                 compiler.new_instruction(Instruction::Sub(dst.clone(), rhs));

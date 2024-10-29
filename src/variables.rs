@@ -20,6 +20,11 @@ impl VariableLocation
         }
     }
 
+    pub fn is_stack(&self) -> bool
+    {
+        matches!(self, Self::StackOffset(_))
+    }
+
     pub fn as_gen(&self, size : &Size) -> ValueCodegen
     {
         match self
