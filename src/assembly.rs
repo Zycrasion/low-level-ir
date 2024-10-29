@@ -1,8 +1,7 @@
 use crate::*;
 
 #[derive(Clone)]
-pub enum Instruction
-{
+pub enum Instruction {
     AsmLiteral(String),
     Label(String),
     Move(ValueCodegen, ValueCodegen),
@@ -14,27 +13,24 @@ pub enum Instruction
     Add(ValueCodegen, ValueCodegen),
     Sub(ValueCodegen, ValueCodegen),
     LoadAddress(ValueCodegen, ValueCodegen),
-    Call(String)
+    Call(String),
 }
 
-impl Instruction
-{
-    pub fn codegen_x86(&self) -> String
-    {
-        match self
-        {
-            Instruction::Label(name)            => format!("{name}:"),
-            Instruction::Move(dst, src)         => format!("mov {dst}, {src}"),
-            Instruction::IntMultiply(dst, src)  => format!("imul {dst}, {src}"),
-            Instruction::Multiply(dst, src)     => format!("mul {dst}, {src}"),
-            Instruction::Return                 => "ret".to_string(),
-            Instruction::Push(src)              => format!("push {src}"),
-            Instruction::Pop(dst)               => format!("pop {dst}"),
-            Instruction::Add(dst, src)          => format!("add {dst}, {src}"),
-            Instruction::Sub(dst, src)          => format!("sub {dst}, {src}"),
-            Instruction::LoadAddress(dst, src)  => format!("lea {dst}, {src}"),
-            Instruction::Call(name)             => format!("call {name}"),
-            Instruction::AsmLiteral(literal)    => literal.clone()
+impl Instruction {
+    pub fn codegen_x86(&self) -> String {
+        match self {
+            Instruction::Label(name) => format!("{name}:"),
+            Instruction::Move(dst, src) => format!("mov {dst}, {src}"),
+            Instruction::IntMultiply(dst, src) => format!("imul {dst}, {src}"),
+            Instruction::Multiply(dst, src) => format!("mul {dst}, {src}"),
+            Instruction::Return => "ret".to_string(),
+            Instruction::Push(src) => format!("push {src}"),
+            Instruction::Pop(dst) => format!("pop {dst}"),
+            Instruction::Add(dst, src) => format!("add {dst}, {src}"),
+            Instruction::Sub(dst, src) => format!("sub {dst}, {src}"),
+            Instruction::LoadAddress(dst, src) => format!("lea {dst}, {src}"),
+            Instruction::Call(name) => format!("call {name}"),
+            Instruction::AsmLiteral(literal) => literal.clone(),
         }
     }
 }

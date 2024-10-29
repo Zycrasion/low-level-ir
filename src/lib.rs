@@ -24,6 +24,3 @@ pub use operand::*;
 
 mod assembly;
 pub use assembly::*;
-
-mod ir;
-pub use ir::*;

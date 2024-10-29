@@ -1,6 +1,4 @@
-
 use crate::{Size, ValueCodegen};
-
 
 #[repr(usize)]
 #[derive(Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
@@ -24,13 +22,11 @@ pub enum Register {
 }
 
 impl Register {
-    pub fn as_ptr(&self) -> ValueCodegen
-    {
+    pub fn as_ptr(&self) -> ValueCodegen {
         ValueCodegen::Pointer(format!("QWORD [{}]", self.as_qword()))
     }
 
-    pub fn as_deref(&self, size : &Size) -> ValueCodegen
-    {
+    pub fn as_deref(&self, size: &Size) -> ValueCodegen {
         ValueCodegen::Pointer(format!("{} [{}]", size.name(), self.as_qword()))
     }
 
@@ -38,8 +34,7 @@ impl Register {
         unsafe { std::mem::transmute(self) }
     }
 
-    pub fn as_gen(&self, size : &Size) -> ValueCodegen
-    {
+    pub fn as_gen(&self, size: &Size) -> ValueCodegen {
         ValueCodegen::Register(self.as_size(size))
     }
 

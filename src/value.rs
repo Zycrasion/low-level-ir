@@ -16,24 +16,45 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn codegen(&self, compiler: &mut Compiler, ty : &OperandType) -> ValueCodegen {
+    pub fn codegen(&self, compiler: &mut Compiler, ty: &OperandType) -> ValueCodegen {
         match self {
             Value::Reference(ref name) => {
-                let variable = compiler.scope_manager.get_variable_manager().get(name).expect("Variable {name} does not exist.");
-                compiler.new_instruction(Instruction::LoadAddress(Register::AX.as_gen(&Size::QuadWord), variable.0.as_gen(&variable.1.size())));
+                let variable = compiler
+                    .scope_manager
+                    .get_variable_manager()
+                    .get(name)
+                    .expect("Variable {name} does not exist.");
+                compiler.new_instruction(Instruction::LoadAddress(
+                    Register::AX.as_gen(&Size::QuadWord),
+                    variable.0.as_gen(&variable.1.size()),
+                ));
                 Register::AX.as_gen(&Size::QuadWord)
-            },
+            }
             Value::Dereference(ref name) => {
-                let variable = compiler.scope_manager.get_variable_manager().get(name).expect("Variable {name} does not exist.");
-                compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&Size::QuadWord), variable.0.as_ptr()));
+                let variable = compiler
+                    .scope_manager
+                    .get_variable_manager()
+                    .get(name)
+                    .expect("Variable {name} does not exist.");
+                compiler.new_instruction(Instruction::Move(
+                    Register::AX.as_gen(&Size::QuadWord),
+                    variable.0.as_ptr(),
+                ));
                 let deref_size = variable.1.deref_size().expect("Not a pointer");
-                compiler.new_instruction(Instruction::Move(Register::AX.as_gen(&deref_size), Register::AX.as_deref(&deref_size)));
+                compiler.new_instruction(Instruction::Move(
+                    Register::AX.as_gen(&deref_size),
+                    Register::AX.as_deref(&deref_size),
+                ));
                 Register::AX.as_gen(&deref_size)
-            },
+            }
             Value::Variable(ref name) => {
-                let variable = compiler.scope_manager.get_variable_manager().get(name).expect("Variable {name} does not exist.");
+                let variable = compiler
+                    .scope_manager
+                    .get_variable_manager()
+                    .get(name)
+                    .expect("Variable {name} does not exist.");
                 variable.0.as_gen(&variable.1.size())
-            },
+            }
             Value::Int(num) => ValueCodegen::Number(num.clone()),
             Value::StringLiteral(literal) => ValueCodegen::StringLiteral(literal.clone()),
             Value::FunctionCall(name, parameters) => {
@@ -49,7 +70,7 @@ impl Value {
                 compiler.new_instruction(Instruction::Move(dst.clone(), lhs));
                 compiler.new_instruction(Instruction::Add(dst.clone(), rhs));
                 dst
-            },
+            }
             Value::Sub(lhs, rhs) => {
                 // TODO: Make Dynamic Sizing
                 let lhs = lhs.codegen(compiler, ty);
@@ -98,4 +119,3 @@ impl ValueCodegen {
         }
     }
 }
-
