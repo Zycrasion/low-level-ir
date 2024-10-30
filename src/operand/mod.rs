@@ -11,13 +11,14 @@ pub enum OperandType {
     Undefined,
     Int(Size),
     UInt(Size),
+    Char,
     Pointer(Box<OperandType>),
 }
 
 impl OperandType {
     pub fn size(&self) -> Size {
         match self {
-            OperandType::Undefined => Size::Byte,
+            OperandType::Undefined | OperandType::Char => Size::Byte,
             OperandType::Int(size) | OperandType::UInt(size) => *size,
             OperandType::Pointer(_) => Size::QuadWord,
         }

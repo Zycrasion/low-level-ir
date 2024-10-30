@@ -38,6 +38,21 @@ impl Register {
         ValueCodegen::Register(self.as_size(size))
     }
 
+    pub fn as_byte(&self) -> String
+    {
+        match self {
+            Register::AX => "Al".to_string(),
+            Register::BX => "Bl".to_string(),
+            Register::CX => "Cl".to_string(),
+            Register::DX => "Dl".to_string(),
+            Register::SI => "SIL".to_string(),
+            Register::DI => "DIL".to_string(),
+            Register::SP => "SPL".to_string(),
+            Register::BP => "BPL".to_string(),
+            _ => format!("{}B", self.as_qword()),
+        }
+    }
+
     pub fn as_word(&self) -> String {
         match self {
             Register::AX => "AX".to_string(),
@@ -82,10 +97,10 @@ impl Register {
 
     pub fn as_size(&self, size: &Size) -> String {
         match size {
+            Size::Byte => self.as_byte(),
             Size::Word => self.as_word(),
             Size::DoubleWord => self.as_dword(),
             Size::QuadWord => self.as_qword(),
-            _ => todo!(),
         }
     }
 }
