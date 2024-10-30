@@ -4,6 +4,7 @@ pub struct Compiler {
     pub(crate) compiled: Vec<Instruction>,
     pub(crate) scope_manager: ScopeManager,
     pub operands: Vec<Operand>,
+    pub string_defines: Vec<String>,
 }
 
 impl Compiler {
@@ -12,6 +13,7 @@ impl Compiler {
             scope_manager: ScopeManager::new(),
             compiled: vec![],
             operands: vec![],
+            string_defines : vec![],
         }
     }
 
