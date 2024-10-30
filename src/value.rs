@@ -9,6 +9,7 @@ pub enum Value {
     Reference(String),
     Dereference(String),
     Variable(String),
+    Char(char),
     Int(String), // Store numerals as strings because we are directly compiling into AMD64
     StringLiteral(String),
     FunctionCall(String, Vec<Value>),
@@ -18,6 +19,9 @@ pub enum Value {
 impl Value {
     pub fn codegen(&self, compiler: &mut Compiler, ty: &OperandType) -> ValueCodegen {
         match self {
+            Value::Char(c) => {
+                ValueCodegen::StringLikeValue(format!("'{c}'"))
+            }
             Value::Reference(ref name) => {
                 let variable = compiler
                     .scope_manager
@@ -91,6 +95,7 @@ pub enum ValueCodegen {
     StackOffset(String),
     Pointer(String),
     Number(String),
+    StringLikeValue(String),
     StringLiteral(String),
 }
 
@@ -115,6 +120,7 @@ impl ValueCodegen {
             | ValueCodegen::StackOffset(s)
             | ValueCodegen::Pointer(s)
             | ValueCodegen::Number(s)
+            | ValueCodegen::StringLikeValue(s)
             | ValueCodegen::StringLiteral(s) => s.clone(),
         }
     }
