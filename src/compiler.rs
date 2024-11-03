@@ -35,7 +35,7 @@ impl Compiler {
                 self.scope_manager.declare_function_global(
                     name,
                     _type,
-                    &parameters
+                    &parameters // I hate collecting the vector then referencing into a slice too, there is no way around it however
                         .iter()
                         .cloned()
                         .map(|v| v.1)

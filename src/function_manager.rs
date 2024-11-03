@@ -20,8 +20,8 @@ impl FunctionManager {
         }
     }
 
-    pub fn get_function_type(&self, name: &str) -> Option<(OperandType, Vec<OperandType>)> {
-        self.functions.get(name).cloned()
+    pub fn get_function_type(&self, name: &str) -> Option<&(OperandType, Vec<OperandType>)> {
+        self.functions.get(name)
     }
 
     pub fn declare_function(&mut self, name: &str, _type: &OperandType, params: &[OperandType]) {

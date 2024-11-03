@@ -2,7 +2,7 @@ use crate::*;
 
 pub fn variable_declaration(
     ty: &OperandType,
-    name: &String,
+    name: &str,
     value: &Value,
     compiler: &mut Compiler,
 ) {
@@ -15,7 +15,7 @@ pub fn variable_declaration(
     m_set_variable(&ty, &variable_information, value, compiler);
 }
 
-pub fn set_variable(name: &String, value: &Value, compiler: &mut Compiler) {
+pub fn set_variable(name: &str, value: &Value, compiler: &mut Compiler) {
     let (variable_information, ty) = compiler
         .scope_manager
         .get_variable_manager()

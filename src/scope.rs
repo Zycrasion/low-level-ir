@@ -42,7 +42,7 @@ impl ScopeManager {
             .declare_function(&name, _type, params);
     }
 
-    pub fn get_function<S>(&self, name: S) -> Option<(OperandType, Vec<OperandType>)>
+    pub fn get_function<S>(&self, name: S) -> Option<&(OperandType, Vec<OperandType>)>
     where
         S: AsRef<str>,
     {

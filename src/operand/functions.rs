@@ -1,16 +1,17 @@
 use crate::*;
 
-pub fn function_call(name: &str, parameters: &Vec<Value>, compiler: &mut Compiler) -> Size {
-    let function = compiler
+pub fn function_call(name: &str, parameters: &[Value], compiler: &mut Compiler) -> Size {
+    let (return_type, params) = compiler
         .scope_manager
         .get_function(name)
-        .expect("No Function Exists");
+        .expect("No Function Exists")
+        .clone();
 
     for (i, value) in parameters.iter().enumerate() {
-        let value = value.codegen(compiler, &function.1[i]);
+        let value = value.codegen(compiler, &params[i]);
         compiler.new_instruction(Instruction::Push(PARAMETER_REGISTERS[i].as_gen(&Size::QuadWord)));
         compiler.new_instruction(Instruction::Move(
-            PARAMETER_REGISTERS[i].as_gen(&function.1[i].size()),
+            PARAMETER_REGISTERS[i].as_gen(&params[i].size()),
             value,
         ));
     }
@@ -21,14 +22,14 @@ pub fn function_call(name: &str, parameters: &Vec<Value>, compiler: &mut Compile
         compiler.new_instruction(Instruction::Pop(PARAMETER_REGISTERS[i].as_gen(&Size::QuadWord)));
     }
 
-    function.0.size()
+    return_type.size()
 }
 
 pub fn function_decl(
     return_type: &OperandType,
     name: &str,
-    operands: &Vec<Operand>,
-    parameters: &Vec<(String, OperandType)>,
+    operands: &[Operand],
+    parameters: &[(String, OperandType)],
     compiler: &mut Compiler,
 ) {
     compiler.scope_manager.enter_scope();

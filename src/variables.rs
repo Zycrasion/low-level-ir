@@ -61,13 +61,6 @@ impl Default for VariableManager {
 }
 
 impl VariableManager {
-    pub fn used_registers(&self) -> Vec<Register> {
-        self.variables
-            .values()
-            .filter_map(|v| VariableLocation::as_reg(&v.0))
-            .collect()
-    }
-
     pub fn used_stack(&self) -> u32 {
         self.stack_location
     }
@@ -79,7 +72,7 @@ impl VariableManager {
         }
     }
 
-    pub fn deallocate(&mut self, var: &String) -> bool {
+    pub fn deallocate(&mut self, var: &str) -> bool {
         if !self.variables.contains_key(var) {
             return false;
         }
@@ -125,7 +118,7 @@ impl VariableManager {
 
     pub fn get_or_allocate(
         &mut self,
-        var: &String,
+        var: &str,
         _type: &OperandType,
     ) -> Option<(VariableLocation, OperandType)> {
         let _ = self.allocate(var, _type);
