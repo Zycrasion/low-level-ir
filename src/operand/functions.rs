@@ -5,14 +5,21 @@ pub fn function_call(name: &String, parameters: &Vec<Value>, compiler: &mut Comp
         .scope_manager
         .get_function(name)
         .expect("No Function Exists");
+
     for (i, value) in parameters.iter().enumerate() {
         let value = value.codegen(compiler, &function.1[i]);
+        compiler.new_instruction(Instruction::Push(PARAMETER_REGISTERS[i].as_gen(&Size::QuadWord)));
         compiler.new_instruction(Instruction::Move(
             PARAMETER_REGISTERS[i].as_gen(&function.1[i].size()),
             value,
         ));
     }
     compiler.new_instruction(Instruction::Call(name.clone()));
+    let len = parameters.len();
+    for i in 1..=len {
+        let i = len - i;
+        compiler.new_instruction(Instruction::Pop(PARAMETER_REGISTERS[i].as_gen(&Size::QuadWord)));
+    }
 }
 
 pub fn function_decl(
@@ -30,13 +37,19 @@ pub fn function_decl(
         Register::SP.as_gen(&Size::QuadWord),
     ));
     compiler.new_instruction(Instruction::Label("[PLACEHOLDER]".to_string()));
-    let index = compiler.compiled.len() - 1;
+    let placeholder_index = compiler.compiled.len() - 1;
 
     for (i, param) in parameters.iter().enumerate() {
         compiler
             .scope_manager
             .get_variable_manager()
             .allocate_parameter(&param.0, &param.1, i);
+    }
+
+    if !operands.iter().any(|v| matches!(v, Operand::Return(_)))
+    {
+        eprintln!("No return statement in function {name}!");
+        panic!()
     }
 
     for op in operands {
@@ -56,9 +69,9 @@ pub fn function_decl(
 
             let stack = compiler.scope_manager.get_variable_manager().used_stack();
             if stack == 0 {
-                compiler.compiled.remove(index);
+                compiler.compiled.remove(placeholder_index);
             } else {
-                compiler.compiled[index] = Instruction::Sub(
+                compiler.compiled[placeholder_index] = Instruction::Sub(
                     Register::SP.as_gen(&Size::QuadWord),
                     ValueCodegen::Number(stack.to_string()),
                 );
