@@ -1,6 +1,6 @@
 use crate::*;
 
-pub fn function_call(name: &String, parameters: &Vec<Value>, compiler: &mut Compiler) {
+pub fn function_call(name: &str, parameters: &Vec<Value>, compiler: &mut Compiler) -> Size {
     let function = compiler
         .scope_manager
         .get_function(name)
@@ -14,23 +14,25 @@ pub fn function_call(name: &String, parameters: &Vec<Value>, compiler: &mut Comp
             value,
         ));
     }
-    compiler.new_instruction(Instruction::Call(name.clone()));
+    compiler.new_instruction(Instruction::Call(name.to_string()));
     let len = parameters.len();
     for i in 1..=len {
         let i = len - i;
         compiler.new_instruction(Instruction::Pop(PARAMETER_REGISTERS[i].as_gen(&Size::QuadWord)));
     }
+
+    function.0.size()
 }
 
 pub fn function_decl(
     return_type: &OperandType,
-    name: &String,
+    name: &str,
     operands: &Vec<Operand>,
     parameters: &Vec<(String, OperandType)>,
     compiler: &mut Compiler,
 ) {
     compiler.scope_manager.enter_scope();
-    compiler.new_instruction(Instruction::Label(name.clone()));
+    compiler.new_instruction(Instruction::Label(name.to_string()));
     compiler.new_instruction(Instruction::Push(Register::BP.as_gen(&Size::QuadWord)));
     compiler.new_instruction(Instruction::Move(
         Register::BP.as_gen(&Size::QuadWord),

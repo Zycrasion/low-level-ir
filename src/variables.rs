@@ -115,7 +115,7 @@ impl VariableManager {
         );
     }
 
-    pub fn get(&self, var: &String) -> Option<(VariableLocation, OperandType)> {
+    pub fn get(&self, var: &str) -> Option<(VariableLocation, OperandType)> {
         if !self.variables.contains_key(var) {
             return None;
         }

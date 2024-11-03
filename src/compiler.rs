@@ -21,7 +21,7 @@ impl Compiler {
         self.compiled.push(instr)
     }
 
-    pub fn compile(&mut self) -> String {
+    pub fn compile(mut self) -> String {
         let mut defines = String::new();
         for (name, value) in &self.string_defines
         {
@@ -45,13 +45,13 @@ impl Compiler {
         }
 
         let mut buffer = String::new();
-        // if we iter over a non-cloned operands then the for loop retains a borrow and we cant call operands.codegen
-        let cloned_operand = self.operands.clone();
-        for operands in &cloned_operand {
-            operands.codegen(self);
+        // take ownership of operands
+        let operands = std::mem::take(&mut self.operands);
+        for operand in &operands {
+            operand.codegen(&mut self);
         }
 
-        for asm in &self.compiled {
+        for asm in self.compiled {
             buffer.push_str(&asm.codegen_x86());
             buffer.push('\n')
         }

@@ -62,16 +62,14 @@ impl Value {
             Value::Int(num) => ValueCodegen::Number(num.clone()),
             Value::StringLiteral(literal) => ValueCodegen::StringLiteral(literal.clone()),
             Value::FunctionCall(name, parameters) => {
-                function_call(name, parameters, compiler);
-
-                ValueCodegen::Register(Register::AX.as_dword())
+                ValueCodegen::Register(Register::AX.as_size(&function_call(name, parameters, compiler)))
             }
             Value::Add(lhs, rhs) => {
                 // TODO: Make Dynamic Sizing
                 let lhs = lhs.codegen(compiler, ty);
                 let rhs = rhs.codegen(compiler, ty);
                 let dst = Register::AX.as_gen(&ty.size());
-                compiler.new_instruction(Instruction::Move(dst.clone(), lhs));
+                compiler.new_instruction(Instruction::Move(dst.clone(), lhs.clone()));
                 compiler.new_instruction(Instruction::Add(dst.clone(), rhs));
                 dst
             }
@@ -80,7 +78,7 @@ impl Value {
                 let lhs = lhs.codegen(compiler, ty);
                 let rhs = rhs.codegen(compiler, ty);
                 let dst = Register::AX.as_gen(&ty.size());
-                compiler.new_instruction(Instruction::Move(dst.clone(), lhs));
+                compiler.new_instruction(Instruction::Move(dst.clone(), lhs.clone()));
                 compiler.new_instruction(Instruction::Sub(dst.clone(), rhs));
                 dst
             }

@@ -17,7 +17,7 @@ pub enum Instruction {
 }
 
 impl Instruction {
-    pub fn codegen_x86(&self) -> String {
+    pub fn codegen_x86(self) -> String {
         match self {
             Instruction::Label(name) => format!("{name}:"),
             Instruction::Move(dst, src) => format!("mov {dst}, {src}"),
@@ -30,7 +30,7 @@ impl Instruction {
             Instruction::Sub(dst, src) => format!("sub {dst}, {src}"),
             Instruction::LoadAddress(dst, src) => format!("lea {dst}, {src}"),
             Instruction::Call(name) => format!("call {name}"),
-            Instruction::AsmLiteral(literal) => literal.clone(),
+            Instruction::AsmLiteral(literal) => literal,
         }
     }
 }

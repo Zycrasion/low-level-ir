@@ -20,17 +20,17 @@ impl FunctionManager {
         }
     }
 
-    pub fn get_function_type(&self, name: &String) -> Option<(OperandType, Vec<OperandType>)> {
+    pub fn get_function_type(&self, name: &str) -> Option<(OperandType, Vec<OperandType>)> {
         self.functions.get(name).cloned()
     }
 
-    pub fn declare_function(&mut self, name: &String, _type: &OperandType, params: &[OperandType]) {
+    pub fn declare_function(&mut self, name: &str, _type: &OperandType, params: &[OperandType]) {
         if self.functions.contains_key(name) {
             // TODO: Return a custom error type
             return;
         }
 
         self.functions
-            .insert(name.clone(), (_type.clone(), params.to_vec()));
+            .insert(name.to_string(), (_type.clone(), params.to_vec()));
     }
 }

@@ -56,21 +56,6 @@ pub enum Operand {
 }
 
 impl Operand {
-    pub fn get_values(&self) -> Vec<Value> {
-        match self {
-            Self::Multiply(_, a, b)
-            | Self::Add(_, a, b)
-            | Self::Subtract(_, a, b)
-            | Self::Divide(_, a, b) => vec![a.clone(), b.clone()],
-            Self::Return(a) | Self::DeclareVariable(_, _, a) | Self::SetVariable(_, a) => {
-                vec![a.clone()]
-            }
-            Self::FunctionCall(_, a) => a.clone(),
-            Self::DropVariable(_) | Self::InlineAssembly(_) => vec![],
-            Self::FunctionDecl(_, _, a, _) => a.iter().flat_map(|v| v.get_values()).collect(),
-        }
-    }
-
     pub fn codegen(&self, compiler: &mut Compiler) {
         match self {
             Operand::DeclareVariable(ty, name, value) => {
