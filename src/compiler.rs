@@ -4,7 +4,7 @@ pub struct Compiler {
     pub(crate) compiled: Vec<Instruction>,
     pub(crate) scope_manager: ScopeManager,
     pub operands: Vec<Operand>,
-    pub string_defines: Vec<String>,
+    pub string_defines: Vec<(String, String)>,
 }
 
 impl Compiler {
@@ -22,6 +22,13 @@ impl Compiler {
     }
 
     pub fn compile(&mut self) -> String {
+        let mut defines = String::new();
+        for (name, value) in &self.string_defines
+        {
+            let value = value.replace("\\n", "\", 10, \"");
+            defines.push_str(&format!("{name}:\n\tdb \"{value}\", 0\n"));
+        }
+
         for operand in &self.operands {
             if let Operand::FunctionDecl(_type, name, _, parameters) = operand {
                 // If its a function, add it to the function  declaration.
@@ -49,7 +56,7 @@ impl Compiler {
             buffer.push('\n')
         }
 
-        buffer
+        format!("section .rodata\n{defines}\nsection .text\n{buffer}")
     }
 }
 
