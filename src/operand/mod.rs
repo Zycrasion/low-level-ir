@@ -48,7 +48,7 @@ pub enum Operand {
     Divide(OperandType, Value, Value),
 
     // Type-Implicit
-    SetVariable(String, Value),
+    SetValue(Value, Value),
     DropVariable(String),
     FunctionCall(String, Vec<Value>),
     Return(Value),
@@ -61,8 +61,8 @@ impl Operand {
             Operand::DeclareVariable(ty, name, value) => {
                 variable_declaration(ty, name, value, compiler);
             }
-            Operand::SetVariable(name, value) => {
-                set_variable(name, value, compiler);
+            Operand::SetValue(lhs, value) => {
+                set_value(lhs, value, compiler);
             }
             Operand::InlineAssembly(asm) => {
                 compiler.new_instruction(Instruction::AsmLiteral(asm.clone()));

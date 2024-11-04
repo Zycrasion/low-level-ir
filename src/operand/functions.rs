@@ -8,7 +8,7 @@ pub fn function_call(name: &str, parameters: &[Value], compiler: &mut Compiler) 
         .clone();
 
     for (i, value) in parameters.iter().enumerate() {
-        let value = value.codegen(compiler, &params[i]);
+        let value = value.codegen_size(compiler, &params[i].size());
         compiler.new_instruction(Instruction::Push(PARAMETER_REGISTERS[i].as_gen(&Size::QuadWord)));
         compiler.new_instruction(Instruction::Move(
             PARAMETER_REGISTERS[i].as_gen(&params[i].size()),
@@ -58,7 +58,7 @@ pub fn function_decl(
     for op in operands {
         if let Operand::Return(value) = op {
             if *value != Value::Null {
-                let value = value.codegen(compiler, return_type);
+                let value = value.codegen_size(compiler, &return_type.size());
 
                 // Edge case where the return value is a maths expression
                 // Since all Maths Expressions are calculated using the AX register there is no need to move it...
