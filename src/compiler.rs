@@ -5,6 +5,7 @@ pub struct Compiler {
     pub(crate) scope_manager: ScopeManager,
     pub operands: Vec<Operand>,
     pub string_defines: Vec<(String, String)>,
+    pub id : usize,
 }
 
 impl Compiler {
@@ -14,7 +15,14 @@ impl Compiler {
             compiled: vec![],
             operands: vec![],
             string_defines : vec![],
+            id : 0
         }
+    }
+
+    pub fn fetch_id(&mut self, prefix : &str) -> String
+    {
+        self.id += 1;
+        format!("{prefix}{}", self.id)
     }
 
     pub fn new_instruction(&mut self, instr: Instruction) {

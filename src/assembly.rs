@@ -7,6 +7,7 @@ pub enum Instruction {
     Move(ValueCodegen, ValueCodegen),
     IntMultiply(ValueCodegen, ValueCodegen),
     Multiply(ValueCodegen, ValueCodegen),
+    Compare(ValueCodegen, ValueCodegen),
     Return,
     Push(ValueCodegen),
     Pop(ValueCodegen),
@@ -14,6 +15,11 @@ pub enum Instruction {
     Sub(ValueCodegen, ValueCodegen),
     LoadAddress(ValueCodegen, ValueCodegen),
     Call(String),
+    JumpConditional
+    {
+        label_destination : String,
+        conditional : CompareOperation
+    },
 }
 
 impl Instruction {
@@ -28,8 +34,13 @@ impl Instruction {
             Instruction::Pop(dst) => format!("pop {dst}"),
             Instruction::Add(dst, src) => format!("add {dst}, {src}"),
             Instruction::Sub(dst, src) => format!("sub {dst}, {src}"),
+            Instruction::Compare(lhs, rhs) => format!("cmp {lhs}, {rhs}"),
             Instruction::LoadAddress(dst, src) => format!("lea {dst}, {src}"),
             Instruction::Call(name) => format!("call {name}"),
+            Instruction::JumpConditional { label_destination, conditional } =>
+            {
+                format!("j{} {label_destination}", conditional.as_suffix())
+            }
             Instruction::AsmLiteral(literal) => literal,
         }
     }

@@ -1,6 +1,9 @@
 mod functions;
 pub use functions::*;
 
+mod compare;
+pub use compare::*;
+
 mod variables;
 pub use variables::*;
 
@@ -34,7 +37,6 @@ impl OperandType {
 
 #[derive(Debug, Clone)]
 pub enum Operand {
-    // Type-Explicit
     DeclareVariable(OperandType, String, Value),
     FunctionDecl(
         OperandType,
@@ -42,15 +44,13 @@ pub enum Operand {
         Vec<Operand>,
         Vec<(String, OperandType)>,
     ),
-    Multiply(OperandType, Value, Value),
     Add(OperandType, Value, Value),
     Subtract(OperandType, Value, Value),
-    Divide(OperandType, Value, Value),
 
-    // Type-Implicit
     SetValue(Value, Value),
     DropVariable(String),
     FunctionCall(String, Vec<Value>),
+    If { predicate : ComparePredicate, main_body : Vec<Operand> },
     Return(Value),
     InlineAssembly(String),
 }
@@ -58,6 +58,10 @@ pub enum Operand {
 impl Operand {
     pub fn codegen(&self, compiler: &mut Compiler) {
         match self {
+            Operand::If { predicate, main_body } =>
+            {
+                if_statement(predicate, main_body, compiler);
+            }
             Operand::DeclareVariable(ty, name, value) => {
                 variable_declaration(ty, name, value, compiler);
             }
@@ -85,8 +89,6 @@ impl Operand {
                     .deallocate(name);
             }
             Operand::Add(_, _, _) | Operand::Subtract(_, _, _) => {}
-            Operand::Divide(_, _, _) => todo!(),
-            Operand::Multiply(_, _, _) => todo!(),
         }
     }
 }

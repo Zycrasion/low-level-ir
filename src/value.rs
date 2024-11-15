@@ -172,6 +172,11 @@ impl Display for ValueCodegen {
 }
 
 impl ValueCodegen {
+    pub fn is_immediate(&self) -> bool
+    {
+        matches!(self, ValueCodegen::Number(_))
+    }
+
     pub fn is_register(&self) -> bool {
         matches!(self, ValueCodegen::Register(_))
     }
